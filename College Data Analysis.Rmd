@@ -1,0 +1,107 @@
+---
+title: "College Data Analysis"
+author: Daniel Efaw
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The following code is an analysis of the US News and World Report on College data and applications. The point of this analysis is to look at the applications to both public and private colleges in 1995.
+
+```{r cache=FALSE}
+library(ISLR)
+set.seed(10)
+attach(College)
+```
+
+In the code below it utilizes the bootstrap function to run the iteration 1000 times and stores that as the variable "s". It then concatenates the mean and the apps mean for the new varible of apps_mean. 
+
+```{r cache=FALSE}
+apps_mean <- NULL
+for (i in 1:1000) {
+  s <- sample(College$Apps, 777 ,replace = FALSE)
+  apps_mean <- c(apps_mean, mean(s))
+}
+```  
+The code below calculates the confidence that the the apps_mean falls at 3001.638
+```{r cache=FALSE}
+quantile(apps_mean, c(0.1, 0.9))
+```
+
+
+
+The code below sets a function of utilizing the seed and interval (Listed in 2nd chunk) to run a randomization test.
+```{r cache=FALSE}
+bootstap_mean <- function(seed, v, interval) {
+  set.seed(seed)
+  apps_mean <- NULL
+  for (i in 1:interval) {
+    s <- sample(v, 777, replace = TRUE)
+    apps_mean <- c(apps_mean, mean(s))
+  }
+  apps_mean
+quantile(apps_mean, c(0.1, 0.9))
+}
+```
+ The code below is an extension of the previous chunk. The primary difference is that not only does it calculate the randomization but it also prints the time necessary for the calculation.
+```{r cache=FALSE}
+system.time(result <- bootstap_mean(123, College$Apps, 1000))
+result
+system.time(result <- bootstap_mean(234, College$Apps, 1000))
+result
+system.time(result <- bootstap_mean(345, College$Apps, 1000))
+result
+system.time(result <- bootstap_mean(123, College$Apps, 5000))
+result
+system.time(result <- bootstap_mean(234, College$Apps, 5000))
+result
+system.time(result <- bootstap_mean(345, College$Apps, 5000))
+```
+
+## Question 3
+
+(Answer below)
+
+``` {r cache=FALSE}
+Apps_num <- data.frame(Private, Apps)
+private_apps <- Apps_num[Apps_num$Private == "Yes",]
+public_apps <- Apps_num[Apps_num$Private == "No",]
+private_apps_count <- private_apps$Apps
+public_apps_count <- public_apps$Apps
+set.seed(1234)
+#public Results 
+public_average <-mean(public_apps_count)
+#private results
+private_average <-mean(private_apps_count)
+first.apps <- public_average - private_average
+final.result <- NULL
+
+#The Code below runs an a randomization sample 5000 times
+
+for (i in 1:5000){
+  combined.apps <- sample(College$Apps, 777, replace = FALSE)
+  new.apps <- data.frame(pubVpriv = College$Private, School= combined.apps)
+  mean2 <- tapply(new.apps$School, new.apps$pubVpriv,mean)
+  final.result <- c(final.result, mean2[1] - mean2[2])
+}
+## The x axis had to be expanded to encompass the results.
+hist(final.result, breaks = 75, main = "Public V Private Schools", xlim = c(-1500,4000), ylab = "Frequency", xlab = "Number of apps")
+abline(v=mean2[2], col = "red", lwd=2)
+```
+
+```{r cache=FALSE}
+greaterapps <- final.result > first.apps
+
+sum(greaterapps) / 10000
+
+```
+
+
+I chose to utilize the P-Value of 0.05. The result was a value of 0.00 which indicates that it is close to impossible under the null hypothesis. As for the data size, I would say that a larger data size may indicate a much more indepth story than is represented in the points above. We can with some confidence draw a conclusion with the above information but, would validate that conclusion with more available data points. 
+
+P-Value 0.05*
+
+
+

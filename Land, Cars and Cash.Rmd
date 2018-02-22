@@ -1,0 +1,147 @@
+---
+title: "Land, Cars and Cash"
+author: "Daniel Efaw"
+date: "September 18, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The code below performs an analysis of the Land and housing market prices in Minnesota over several years including that of 2007-2008 housing crisis. 
+
+Analysis: The housing market in Minnesota did not follow the trend of the housing market across the US. The boxplot below shows that post 07' the housing market continued to rise and subsequently stablized. (See additional notes below)  
+
+```{r cache=FALSE}
+library(alr4)
+
+plot(MinnLand$acrePrice,MinnLand$year)
+
+Prob1_factor <- as.factor(MinnLand$year)
+
+Prob1_var1 <- lm(log(MinnLand$acrePrice) ~ Prob1_factor)
+
+## The code below plots the variable declared in the previous line 25. 
+
+plot(Prob1_var1)
+
+## The boxplot below shows that the housing market in Minnesota did not follow the general U.S housing crash. I would venture to say that based on the other factors such as the expansion of oil and gas drilling.
+
+boxplot(log(MinnLand$acrePrice) ~ Prob1_factor, data=MinnLand)
+
+boxplot(log(MinnLand$acrePrice) ~ MinnLand$region, data=MinnLand)
+
+summary(Prob1_var1)
+
+## The code above indicates that the housing prices dipped slightly in 2003 but from then on climbed at a steady rate. This is indicated by the coefficients.
+```
+
+```{r cache=FALSE}
+
+Prob1_var2 <- lm(log(MinnLand$acrePrice)~Prob1_factor,data = MinnLand,type="n",ylim=c(2,15))
+
+plot(Prob1_var2)
+
+plot(Prob1_var1$residuals)
+
+## The anova below indicates an F-Value of 308.49. This indicates that the variance is significantly different. 
+
+anova(Prob1_var1)
+
+```
+
+
+
+
+
+The analysis below is an evaluation of the salary data involving a possible pay discrimination case in the midwest. The data takes into account the pay scales of professors and associate professiors at a small college. The 
+
+END ANALYSIS: Analysis of the data it appears that the data suggests that there is no pay discrimination. (See notes below). It appears that if we utilize the P value of .05 then we reject the null hypothesis. That being said, if we utilize the .01 benchmark then we fail to reject the null hyptothesis and it can indicate some form of pay discimination. Although the other models indicate that rank and degree carry more weight in pay scales than that of sex.
+
+```{r cache=FALSE}
+library(alr4)
+head(salary)
+
+sal_var1 <- lm(salary~sex, data = salary)
+
+summary(sal_var1)
+
+## Something that is particularly interesting here is that the coefficient in the previous model (Sal_var1) shows that the the variable of sex indicates a -3340. Based on only the variables in the model I tend to believe that there is some pay discrimination towards females.
+
+sal_var2 <- lm(salary~sex+degree+rank+year+ysdeg,data = salary)
+
+summary(sal_var2)
+
+sal_var3 <- lm(salary~sex+degree+rank+year+ysdeg+sex*rank+sex*degree,data = salary)
+
+summary(sal_var3)
+
+## The model above (sal_var3) indicates that the variable of sex does not have the same weight as the weight of rank and years with the degree.
+
+sal_var4 <- lm(salary~.-rank,data = salary)
+
+summary(sal_var4)
+
+sal_var5 <- lm(salary~sex+degree+year, data = salary)
+
+summary(sal_var5)
+
+## The model above (sal_var5) shows more of an impact not so much on sex of the data but more on the degree acheived. The only negative in the model above is that of the degreePhd which is -382.4. This lends to the belief that there is not so much discrimination against females as it is more based on the degree achieved.
+
+sal_var6 <- lm(salary~degree+ysdeg+rank,data = salary)
+
+summary(sal_var6)
+
+```
+
+```{r cache=FALSE}
+
+t.test(salary$salary[salary$sex=="Male"], salary$salary[salary$sex=="Female"], alternative="greater")
+
+## The code above runs a T test against the Salary and sex of the data. A P-Value of 0.05 would result in a rejection of the Null Hypothesis. However if the P-Value benchmark is placed at .01, then we would fail to reject the null hypothesis. This changes the outcome of the results as a whole.
+
+plot(sal_var5)
+
+confint(sal_var1)
+confint(sal_var6)
+
+anova(sal_var1,sal_var6)
+
+table(salary$rank,salary$sex)
+
+table(salary$degree, salary$rank)
+
+table(salary$sex, salary$rank)
+
+
+```
+
+The analysis below uses the Wool data in the alr4 package fit the full main effects model using Cycles as the response and all other variables as predictors, and interpret the Tukey HSD intervals and test with regard to load. 
+
+ In terms of the response of Cycles and the predictor of load, the adjusted P value shows a significant difference in the 40-45 range. The 40-50 has an adjusted P value of .03 which on the .05 benchmark makes it not as significant. Lastly the 45-50 range has an ajusted value of .27 which is above the .05 benchmark and is significantly different. 
+
+```{r cache=FALSE}
+library(alr4)
+
+Wool$len=as.factor(Wool$len)
+Wool$amp=as.factor(Wool$amp)
+Wool$load=as.factor(Wool$load)
+
+## Line 161,162,163 set all the factors for the model.
+
+wool_var1 <- lm(cycles~len + amp + load, data = Wool)
+
+## the code above sets the linear model.
+summary(wool_var1)
+```
+
+
+```{r cache=FALSE}
+wool_aov <- aov(cycles~len+amp+load, data = Wool)
+## The line above sets the varible wool_aov with the model of cycles as the response and predictors being len, amp and load. 
+TukeyHSD(wool_aov)
+## the line above runs the anova and tukey test on the variable (wool_aov)
+
+
+```

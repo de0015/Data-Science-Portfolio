@@ -1,0 +1,88 @@
+---
+title: "Coins, Cars and Land Prices"
+author: "Daniel Efaw"
+date: "9/6/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+The code below is an analysis of the Jevons coin collection that is part of the R studio package. The Idea is to look at the coins based on size and weight and total gold percentage and evaluate how the coins changed. The model that is below suggests that as the age of the coin increases the weight of the coin decreases.
+
+```{r cache=FALSE}
+library(alr4)
+attach(jevons)
+set.seed(1234)
+weight <- jevons$Weight
+age <- jevons$Age
+sd <- jevons$SD
+### The code above sets the varibles for the code below
+
+## The code below runs the linear modeling with the Standard Deviation squared
+lm_model_age <- lm(weight ~ age, weights=n/(SD^2),data = jevons)
+lm_model_age2 <- lm(weight ~ age, data = jevons)
+## There are two linear models created with this code. The first is the Standard Deviation squared and the second simply plots the weight against the age.
+plot(sd^2 ~ age, data = jevons)
+summary(lm_model_age)
+summary(lm_model_age2)
+## The summary of the models shows a coefficient of .0235 for the 2nd model with age
+lm_model_age_plot <-plot(weight~age,data = jevons)
+plot(weight~age, data = jevons)
+plot(lm_model_age$model)
+```
+
+
+The model of the stopping distance shows that the stopping distance increases as the speed increases. There is some non constant variance with the dataset. The linear model suggests that a transform of the data yeilds a 1.35 power in which would result in normalization of the data. 
+
+```{r cache=FALSE}
+library(alr4)
+attach(stopping)
+set.seed(1234)
+speed <- stopping$Speed
+distance <- stopping$Distance
+smoothScatter(speed ~ distance)
+## The scatter plot shows the distribution of the data the growing distance as speed increases. 
+stop_mod <- lm(speed ~ distance)
+summary(stop_mod)
+ncvTest(stop_mod)
+## The non constant variance test indicates an P value of .04.
+plot(stop_mod$fitted.values ~ stop_mod$residuals)
+## Line 58 plots the fitted values against the residuals.
+```
+```{r cache=FALSE}
+stop_mod3 <-plot(stop_mod$residuals^2)
+## The code above plots the stop_mod variable. Specifically the residuals squared.
+summary(powerTransform(speed ~ distance))
+## The power transform gives us an indication that the estimated power to normality is 1.35
+boxCox(stop_mod)
+```
+
+The dataset MinnLand provides the collected data points from 2002-2011 for several regions within the state of Minnesota. By using the square root of the acrePrice it shows that the residuals vs the fitted are almost linear. The challenge using data like this is that no matter how hard you try to remove the non constant variance,  it will at times be part of the answer.
+```{r cache=FALSE}
+library(alr4)
+attach(MinnLand)
+set.seed(1234)
+
+min_1 <- lm(acrePrice~.-region-financing,data=MinnLand)
+plot(min_1)
+na.omit("NA")
+min2 <- lm(log(acrePrice)~.-region-financing,data=MinnLand)
+## The line above takes the log of acrePrice and removes region and financing.
+min3 <- lm(sqrt(acrePrice)~.-region-financing,data=MinnLand)
+## the line above creates a linear model of the square root of acrePrice minus region and financing
+plot(min3)
+boxCox(min_1)
+summary(powerTransform(min_1))
+```
+```{r cache=FALSE}
+boxCox(min3)
+ncvTest(min3)
+## the non constant variance returned a P value of 1.16
+plot(min3)
+
+
+```
