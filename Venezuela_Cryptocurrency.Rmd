@@ -1,0 +1,145 @@
+---
+title: "PetroCoin"
+author: "Daniel Efaw"
+date: "8/14/2018"
+output: html_document
+---
+
+```{r, include=FALSE}
+#knitr::opts_chunk$set(
+#	echo = TRUE)
+
+```
+# Venezuelan PetroCoin 
+
+The concept of cryptocurrency moving into the mainstream has always seemed like a pipedream for those involved in the crypto scene. The rapid growth and expansion and even subsequent crash of Bitcoin led many to look at altcoins as a potential alternative currency. The ability for a currency to be traded with little to no overhead has always drawn both people and organizations to develop and release their own coin. 
+
+In recent news, Venezuela’s government has been in disarray and challenged by a variety of internal and external factors. One of those factors has been the sudden and rather abrupt inflation of the country’s currency. This coupled with the economic downturn and tariffs has led the country to institute their own cryptocurrency and make the bold move to make the currency an official unit of accounting.  
+
+This prompted the question of whether or not the move to cryptocurrency was worthwhile. As we explore the factors that influence those economic choices, we will look at the rapid change of currency and the opening prices of the Petrodollar. It should be noted that when the petrodollar was introduced, it was representative of a share of the oil resources in the country. Hence the name, Petrodollar.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(readxl)
+library(lubridate)
+library(forecast)
+```
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+petrodollar_data <- read_excel("~/Dropbox/Data Analysis for Portfolio/Petrodollar Data.xls")
+currency <- read_excel("~/Dropbox/Data Analysis for Portfolio/API_PA.NUS.FCRF_DS2_en_excel_v2_10034086.xls")
+inflation <- read_excel("~/Dropbox/Data Analysis for Portfolio/IMF_Inflation.xls")
+```
+The lines below subset the data and rename some of the column names. 
+```{r}
+colnames(petrodollar_data)[2] <- "Open"
+colnames(petrodollar_data)[5] <- "Close"
+colnames(currency)[1] <- "Year"
+colnames(currency)[2] <- "Currency"
+colnames(inflation)[2] <- "USA"
+
+# The code below seperates the date to allow for monthly and yearly analysis of the changes.
+petrodollar_data$Date <- as.Date(petrodollar_data$Date,"%Y-%m-%d")
+petrodollar_data$Year <- as.numeric(format(petrodollar_data$Date, "%Y"))
+petrodollar_data$Month = as.numeric(format(petrodollar_data$Date, "%m"))
+
+head(petrodollar_data)
+
+# The code below creates subsets which will be used in the analysis.
+petro_subset <- petrodollar_data %>%
+  filter(Year >= "2010") 
+currency_subset <- currency %>%
+  filter(Year >= "2010")
+inflation_subset <- inflation %>%
+  filter(Year >= "2010") %>%
+  filter(Year <= "2018")
+```
+The graphs below are a preliminary look at the overall datasets. In the graphs below, we have several comparisons. In the top left we have the conversion rate of the Venezuelan Bolivar against the US Dollar. As you can that until the late 1990's, the Bolivar was almost a 1:1 exchange rate. 
+
+In the top right, we have a comparison of the US inflation rates since 1980. This graph is primarily used to show the base inflation rate in the US. As you can see in the complete dataset, the US has maintained a fairly steady rate of inflation. That rate being generally around the 3% mark. 
+
+This is in comparison to the bottom left graph which is the inflation rate of the Bolivar. The rate of inflation stayed at or near 0% since 1980. The inflation rate jumped around the 2015-2016 mark and grew exponentially in 2016-2017. This would coincide with the geopolitical changes that have occurred within the Venezuelan government. 
+
+The bottom right hand chart indicates the opening prices of the Petrocoin. Beginning August 20th, 2018, Venezuela will officially begin using the Petrocoin as a recognized form of accounting. 
+
+##This is unprecedented. 
+
+This will be the first time that a country has recognized a cryptocurrency as an official form of tender and will be backed by the country's oil reserves.
+ 
+```{r}
+par(mfrow=c(2,2))
+plot(currency$Currency~currency$Year, xlab = "Years", ylab = "Venezuelan Currency VS US Dollar", main = "Venezuelan Bolivar vs USD")
+plot(inflation$USA~inflation$Year,xlab = "Years", ylab = "USA Inflation Rates", main = "US Inflation")
+plot(inflation$Venezuela~inflation$Year, xlab = "Years", ylab = "Venezuela Inflation Rates", main = "Venezuelan Bolivar Inflation Rate")
+plot(petrodollar_data$Open,petrodollar_data$Year, ylab = "Years", xlab = "PetroCurrency Opening Price", main = "Petrocoin Opening Price")
+```
+
+The charts below represent a subset of the prevously shown data. The subsets are from the years 2010 to 2018 across all datasets with the exception of the Petrodollar. The Petrodollar value was not reported to coin market cap until 2014.  
+```{r}
+currency_graph <- ggplot(currency_subset, aes(Year,Currency))+
+  geom_point(aes(color = Currency))+
+  geom_smooth(method = "lm")
+currency_graph <- currency_graph + labs(x = "Years", y = "Venezuelan VS US", title = "Venezuelan Currency VS US Dollar")
+
+inflation_usa_graph <- ggplot(inflation_subset, aes(Year,USA))+
+  geom_point(aes(color = USA))+
+  geom_smooth(method = "lm")
+inflation_usa_graph <- inflation_usa_graph + labs(x = "Years", y = "USA Inflation Rates", title = "US Inflation Rates over the years")
+
+venezuela_inflation_graph <- ggplot(inflation_subset, aes(Year,Venezuela))+
+  geom_point(aes(color = Venezuela))+
+  geom_smooth(method = "lm")
+venezuela_inflation_graph <- venezuela_inflation_graph + labs(y = "Years", x = "Venezuela Inflation Rates", title = "Venezuelan Inflation Rates since 2010")
+
+petro_graph <- ggplot(petro_subset, aes(Year,Open))+
+  geom_point(aes(color = Open))+
+  geom_smooth(method = "lm")
+petro_graph <- petro_graph + labs(x = "Years", y = "Opening Price", title = "Petrodollar Cryptocurrency Opening Price")
+
+grid.arrange(currency_graph,inflation_usa_graph,venezuela_inflation_graph,petro_graph)
+
+```
+
+The Charts above show an interesting trend in both the crypto market as well as the inflation rates. Overall, the trend shows a rapidly increasing inflation rate as well as a gradual increase of Petrodollar opening values. 
+
+This shows a couple of influencing factors. One of which is the obvious increase in the inflation rates. The bottom left graph indicates a sudden extreme spike in the inflation rate. This spike occurred between 2017 and 2018. According to local sources, the sudden spike in inflation was related to the government printing more currency as a means for paying its debts. This led to an extreme and sudden devaluation of printed currency. 
+
+This poses a unique challenge. The inflation rate being as high and as rapidly growing as it is, leaves many to question if the currently printed currency will hold any value at all when it's over. This leads to the question and subsequent analysis of the viability of the Petrodollar. 
+
+The Petrodollar is a cryptocurrency that is backed by the oil reserves in Venezuela. The idea behind it being to use the concept of the cryptocurrency to allow for a more free trade outside of the sanctions that are currently in place against country. 
+
+
+
+
+
+```{r}
+mod1 <- lm(Open ~ High + Low, data = petrodollar_data)
+mod2 <- lm(Venezuela~USA, data = inflation_subset)
+summary(mod1)
+summary(mod2)
+```
+
+The models above indicate a predicted continuation of the challenges face by the ailing printed currency. If no other contributing factors are introduced or those in play are not altered, then the inflation will continue to grow and devalue the printed currency.
+
+
+# Business & Geopolitical impact
+
+There are several impacts in which the option to use a cryptocurrency in parallel with normal printed currency can have. The first of which is the obvious impact on the local economy. The choice to move to the Petrodollar as a viable currency may pull more people to use the technology vs the printed money. 
+
+  This brings about a rather revolutionary question. If the mass population were to embrace the crypto as payment form vs cash, will it drive up the value? Will it eliminate a population who doesn't have the technology to mine and manage the crypto from the market? 
+
+My personal assessment indicates that as the inflation rate increases, the rate of adoption and subsequent pricing of a Petrodollar will increase. It will limit the ability of some population to conduct business based on the availability of service to transfer money. If the country is able to get the inflation under control, then petrodollar may "fizzle" out. 
+
+Geopolitically speaking, this could have a huge impact. If Venezuela is able to set a precedent and escape the constraints of a traditional sanction, then it could lead to an influx in country wide coin design and use. One particular example that comes to mind is that of the devaluation of Turkey's currency. 
+
+If Venezuela is successful in mitigating the inflation challenges with a coin, it could lead to Turkey developing their own crypto which could change the economic dynamics. 
+
+In conclusion, it’s too early to tell what exactly the inception of Petrocoin will do. One unique challenge is that Petrocoin is by nature would be hard to enforce sanctions against. In the typical currency conversion environment, you would have to go to a regulated exchange to convert Bolivar (Venezuelan currency) to USD. The cryptocurrency market would allow that to be circumvented with exchanges around the world. This would allow you to convert Petro to another coin and onward to USD with little ability for sanctions to intervene. 
+
+If this model ends up working, we could see a shift in the political dynamics of sanctions no longer being an effective tool. Only time will tell.
+
