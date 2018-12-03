@@ -26,7 +26,7 @@ library(gridExtra)
 library(readxl)
 <<<<<<< HEAD
 library(RWordPress)
-options(WordpressLogin = c(firemedic15 = 'Daniboy18'),
+options(WordpressLogin = c(firemedic15 = '*******'),
         WordpressURL = 'https://danielefaw.com/xmlrpc.php')
 library(knitr)
 knit2wp("Venezuela_Cryptocurrency.Rmd","Analysis of Venezuela Petrodollar in Geopolitics", publish = FALSE)

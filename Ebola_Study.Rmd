@@ -23,7 +23,7 @@ library(ggplot2)
 library(scales)
 library(rpart)
 library(RWordPress)
-options(WordpressLogin = c(firemedic15 = 'Daniboy18'),
+options(WordpressLogin = c(firemedic15 = '*******'),
         WordpressURL = 'https://danielefaw.com/xmlrpc.php')
 library(knitr)
 knit2wp("Ebola_Study.Rmd","Ebola Study in Sub Saharan Africa", publish = FALSE)

@@ -16,7 +16,7 @@ library(nnet)
 library(rpart)
 library(RWordPress)
 library(knitr)
-options(WordpressLogin = c(firemedic15 = 'Daniboy18'),
+options(WordpressLogin = c(firemedic15 = '*****'),
         WordpressURL = 'https://www.danielefaw.com/xmlrpc.php')
 knit2wp("Black_Friday_Analysis.Rmd","Sales data analysis for Black Friday", publish = FALSE)
 
