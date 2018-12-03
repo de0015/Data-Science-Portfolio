@@ -24,11 +24,14 @@ library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(readxl)
+<<<<<<< HEAD
 library(RWordPress)
 options(WordpressLogin = c(firemedic15 = 'Daniboy18'),
         WordpressURL = 'https://danielefaw.com/xmlrpc.php')
 library(knitr)
 knit2wp("Venezuela_Cryptocurrency.Rmd","Analysis of Venezuela Petrodollar in Geopolitics", publish = FALSE)
+=======
+>>>>>>> a1be25f2e9656f95cef669e3a05608c104b81a58
 library(lubridate)
 library(forecast)
 ```

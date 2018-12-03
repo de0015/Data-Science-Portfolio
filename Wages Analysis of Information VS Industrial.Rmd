@@ -1,0 +1,108 @@
+---
+title: "Analysis of Wages Information vs Industrial"
+author: "Daniel Efaw"
+date: "2/28/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Hello, 
+
+In this file, we are dissecting the wage data from the ISLR package within R studio.  The Wage data is collected from 3000 observations in the mid-Atlantic region and focus on those who are employed in the Information environment and those who are employed in the industrial environment.  We will be utilizing splines and predicting the salary outcomes based on several factors. One item that should be noted is that we will be sub setting the data to remove some outliers. Those outliers consist of roughly 10 data points that are above 250k a year. 
+
+
+
+
+```{r}
+library(ISLR)
+library(splines)
+data(Wage)
+head(Wage) 
+under_250 <- subset(Wage, Wage$wage<250)
+median(under_250$wage)
+summary(under_250)
+```
+```{r}
+mod0 <- glm(under_250$wage~poly(under_250$age,1,raw = FALSE))
+mod1 <- glm(under_250$wage~poly(under_250$age,2,raw = FALSE))
+mod2 <- glm(under_250$wage~poly(under_250$age,3,raw = FALSE))
+mod3 <- glm(under_250$wage~poly(under_250$age,4,raw = FALSE))
+mod4 <- glm(under_250$wage~poly(under_250$age,5,raw = FALSE))
+AIC(mod0,mod1,mod2,mod3,mod4)
+summary(mod3)
+```
+The models above compare the various ages in a polynomial model. After comparison Mod3_log seems to have the lowest AIC.
+
+```{r}
+#plot(under_250$wage~under_250$age, main= "Wages vs Ages",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+#lines(predict(mod3, newdata = data.frame(age=18:80)),col=10,lwd=3)
+```
+
+
+```{r}
+under_250$stepAge=rep("Between 20-65",dim(under_250)[1])
+under_250$stepAge[under_250$age<20]="Under 20"
+under_250$stepAge[under_250$age>65]="Over 65"
+under_250$stepWage[under_250$wage<104]="Below Median"
+under_250$stepWage[under_250$wage>105]="Above Median"
+table(under_250$stepAge)
+```
+```{r}
+table(under_250$stepWage)
+```
+```{r}
+steps <- glm(wage~bs(age)*education, data = under_250)
+steps2 <- glm(wage~bs(age)*health_ins, data = under_250)
+steps3 <- glm(wage~bs(age)*jobclass, data = under_250)
+steps4 <- glm(wage~bs(age)+education, data = under_250)
+steps5 <- glm(wage~bs(age)*education, data = under_250)
+steps6 <- glm(wage~bs(age)*jobclass, data = under_250)
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with Advanced degree",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps, newdata = data.frame(age=20:80, education = "5. Advanced Degree")),col=10,lwd=3)
+summary(steps)
+```
+```{r}
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with Health Insurance",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps2, newdata = data.frame(age=20:80, health_ins = "1. Yes")),col=10,lwd=3)
+summary(steps2)
+```
+```{r}
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with Job Class of Information",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps3, newdata = data.frame(age=20:80, jobclass = "2. Information")),col=10,lwd=3)
+summary(steps3)
+```
+```{r}
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with High School Grad",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps4, newdata = data.frame(age=20:80, education = "2. HS Grad")),col=10,lwd=3)
+summary(steps4)
+```
+```{r}
+par(mfrow=c(3,2))
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with Job Class of Information",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps3, newdata = data.frame(age=20:80, jobclass = "2. Information")),col=10,lwd=3)
+
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with Health Insurance",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps2, newdata = data.frame(age=20:80, health_ins = "1. Yes")),col=10,lwd=3)
+
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with Advanced degree",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps, newdata = data.frame(age=20:80, education = "5. Advanced Degree")),col=10,lwd=3)
+
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with High School Grad",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps4, newdata = data.frame(age=20:80, education = "2. HS Grad")),col=10,lwd=3)
+
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with 4 year degree",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps5, newdata = data.frame(age=20:80, education = "4. College Grad")),col=10,lwd=3)
+
+plot(under_250$wage~under_250$age, main= "Wages vs Ages with Job Class of Industrial",pch=20, xlab = "Age of Employee", ylab = "Wage of Employee")
+lines(20:80,predict(steps6,newdata = data.frame(age=20:80, jobclass = "1. Industrial")),col=10,lwd=3)
+
+```
+
+ANSWER TO QUESTION
+
+The data above that is utilized above is subsetted to only include wage data that is below 250,000. The models above also indicte the predicted wages for an individual based on not only factors within the job itself but variables that the individual has. The best explaination is that in all of the models the lower aged data points indicate that even with an advanced degree the starting wage is below the median. It is very uncommon (in this dataset) for an individual to be at or above the median of 104,000. That being said it does lend to reason that as education increases (I.E Graduating College, Obtaining an advanced degree) the potential earnings grow rapidly. One thing to take into account is that if you refer to the plot of the wages with a high school education, in both industrial and information, the chances of being over the median income are low at best. Another interesting aspect that I feel is worth mentioning is that in the model of health insurance it appears to have some correlation that the wages level off. 
+
+The best model to indicate the earnings prediction is to utilize model Wage~bs(age)*education. This seems to have the largest impact on what to expect within both types of work.
