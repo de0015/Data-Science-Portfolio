@@ -1,0 +1,170 @@
+---
+title: "Ebola Study in Sub Saharan Africa"
+author: "Daniel Efaw"
+date: "9/7/2018"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+library(maptools)
+library(ggmap)
+library(RCurl)
+library(reshape2)
+library(readxl)
+library(leaflet)
+library(sp)
+library(mapdata)
+library(maps)
+library(ggplot2)
+library(scales)
+library(rpart)
+library(RWordPress)
+options(WordpressLogin = c(firemedic15 = 'Daniboy18'),
+        WordpressURL = 'https://danielefaw.com/xmlrpc.php')
+library(knitr)
+knit2wp("Ebola_Study.Rmd","Ebola Study in Sub Saharan Africa", publish = FALSE)
+
+
+area <- readShapePoly("~/Desktop/Datasets/ebola/historical_spread_polygons.shp")
+ebola_data <- read_excel("~/Desktop/Datasets/ebola/Table_1.xls")
+
+## Dataset reflects outbreaks of Ebola to prior to the 2014 West Africa outbreak.
+## Citation -- Mylne, Adrian; Huang, Zhi; Pigott, David; Kraemer, Moritz; Hay, Simon; Brady, Oliver; et al. (2014): Ebola past outbreak geographic spread GIS polygon data (.shp). figshare. Dataset.
+```
+### Ebola Outbreaks on record
+
+The outbreak of the Ebola virus in 2014 commanded the world’s attention. For one of the first times in the history of the virus, the potential for widespread infection crossed the minds of health officials. This sparked widespread panic about what exactly the virus is and its mortality rates. This also sparked many health officials to reevaluate their epidemiological plans and how they intended to deal with the potential outbreak of a disease.  
+
+The illustration below shows the historical spread of the disease. The challenge with this dataset is that the shape file does not indicate the timeframe in which the disease has spread or which episode is responsible.
+
+The data below has been subdivided into two groups by time. The first being all outbreaks prior to 2001. One thing to note is that this set of outbreaks takes into account since the virus was discovered in 1976. 
+
+
+
+```{r include=FALSE}
+map1 <- get_stamenmap(bbox = c(left = -18.621777, bottom = -36.831269
+                               , right = 52.072385, top = 39.176349),zoom = 6,maptype = "terrain", format = c("png"), color = c("color"))
+map = ggmap(map1)
+area.points <- fortify(area)
+points = as.data.frame(area.points)
+map+geom_point(aes(x = long, y = lat),
+data = points, color ="red", fill ="red", size = .5)
+ebola_data$deathclassification <- ebola_data$Mortality
+ebola_data$deathclassification[ebola_data$Mortality >= 51] ="High"
+ebola_data$deathclassification[ebola_data$Mortality <= 50] ="Low"
+ebola_data$Latitude <- as.numeric(ebola_data$Latitude)
+ebola_data$Longitude <- as.numeric(ebola_data$Longitude)
+ebola_data$Number_of_human_cases <- as.numeric(ebola_data$Number_of_human_cases)
+ebola_data$Number_of_human_deaths <- as.numeric(ebola_data$Number_of_human_deaths)
+ebola_data$Mortality <- as.factor(ebola_data$Mortality)
+ebola_data$Strain <- as.factor(ebola_data$Strain)
+```
+```{r include=FALSE}
+head(ebola_data)
+ebola_post_01 <- ebola_data[1:12,] %>%
+  na.omit()
+ebola_pre_01 <- ebola_data[13:22,] %>%
+  na.omit()
+```
+```{r}
+pre_2001_sum <- sum(ebola_pre_01$Number_of_human_cases)
+
+post_2001_sum <-sum(ebola_post_01$Number_of_human_cases)
+```
+
+
+
+## Pre 2001
+
+The pre 2001 dataset has a total of 1104 human cases that were documented. The map below shows a the general distribution of outbreaks that appears to follow the same general pattern. A large portion of the oubreaks originated in Gabon/Congo regions. One thing to notice in the map below is that many of the oubreaks are based in the dense jungle regions. The one outbreak noted in South Africa originated in Johannasburg and was attributed to an individual traveling from Gabon. 
+
+There is one noted outbreak in the Ivory Coast region. According to records, there was a single individual who contracted the TAFV strand of the Ebola virus which is known to exist in Taï National Park region. 
+
+```{r}
+map+geom_point(aes(x = Longitude , y = Latitude),
+data = ebola_pre_01, color ="red", fill ="red",
+alpha = .5, size = 9)
+```
+
+##Post 2001
+
+The post 2001 dataset is similar in nature to the previous dataset. In the graph below you will note that a large portion of the outbreaks are again centered in the jungle regions of the Congo and Gabon. The post 2001 dataset has 6836 human cases documented. The largest subset of this data includes the 2014 outbreak. This outbreak actually appears to be an outlier when comparing the common locations. 
+
+It should be noted that the 2014 outbreak in Guéckédou, Guinea, accounts for 5481 cases of the 6836. This accounts for 80.1% of the cases reported. This may largely be related to poor containment with high transmission risk factors.
+
+```{r}
+map+geom_point(aes(x = Longitude , y = Latitude),
+data = ebola_post_01, color ="red", fill ="red",
+alpha = .5, size = 9)
+```
+```{r}
+table(ebola_pre_01$deathclassification)
+table(ebola_post_01$deathclassification)
+table(ebola_pre_01$Strain)
+```
+# Death Rates
+
+In both datasets, the noted death rate more so leans towards the high side. To classify the data, we added an additional column to the data frame and created a classification based on the percentage of human cases that were deceased due to the disease. Anything above 51% was classified as "high" mortality and anything below 50% was classified as "low" mortality. 
+
+The idea behind classification this way is because many of the "high" classified outbreaks, were in the high 75% mortality. What is interesting is that many of these outbreaks (7 in total) were of the Ebola strain of the virus. This is interesting because it appears that in the pre-2001 dataset, the odds of survival depended on what strain of the virus that was contracted. The Sudanese version of the virus (SUDV) only appeared in 2 of the noted outbreaks.
+
+```{r}
+pre_high <- filter(ebola_pre_01, deathclassification == "High")
+post_high <- filter(ebola_post_01, deathclassification == "High")
+table(pre_high$Location_of_first_case)
+table(pre_high$Strain)
+
+```
+In the table above, you can see that in Pre-2001 set, the highest mortality rates came from the EBOV strain of the virus and originated most of the time in the remote regions of Gabon or Democratic Republic of the Congo. This indicates that external factors often appear to have the biggest impact on if the disease has a high mortality rate or not.  
+
+In the map below, you can see that the high mortality cases of Ebola and its derivatives, primarily begin in the remote regions consisting of jungle and tropical territory. Although we lack the additional data necessary to evaluate the medical response in this region or the availability of medical services, it is assumed that based on the remote regions and the lack of significant satelite data showing urbanization, there is little in the way of advanced healthcare in the region. This may be a major contributing factor in the levels of mortality associated with these outbreaks.
+
+```{r include=FALSE}
+
+map2 <- get_stamenmap(bbox = c(left = 4.959431, bottom = -13.999537
+                               , right = 36.951618, top = 34.666462),zoom = 8,maptype = "terrain", format = c("png"), color = c("color"))
+
+map2 = ggmap(map2)
+
+map2+geom_point(aes(x = Longitude, y = Latitude),
+data = pre_high, color ="red", fill ="red", size = 9)
+
+```
+```{r warning=FALSE}
+table(post_high$Strain)
+table(post_high$Location_of_first_case)
+
+map+geom_point(aes(x = Longitude, y = Latitude),
+data = post_high, color ="red",alpha = .5, fill ="red", size = 9)
+```
+In the map above, you can see the distribution of the outbreaks of the Ebola virus are a little more expanded in the post 2001 dataset. The two outbreaks in Uganda area are a bit of an anomaly in the regard that they do not know the source and one of the outbreaks (2000-2001) infected 425 individuals resulting in the death of 224. This was a 53% mortality rate. 
+
+## The 2014 outbreak
+
+In the map above, you can see that the 2014 West Africa outbreak was also an anomaly in terms of where the outbreak occured and its severity. What is particularly interesting about this is that the outbreak started in Guéckédou, Guinea and quickly spread amongst several West Africa nations. This rapid expansion and subsequent death rate (54%) came from the socioeconomic environment and the lack of healthcare. This episode outbreak eventually ended up impacting Guinea, Liberia, Sierra Leone, Nigeria and Senegal before world health organization was able to contain it. As of the when the dataset was generated, 5481 individuals had been deemed infected. 
+
+One unique challenge that was present in the 2014 outbreak was even though there was healthcare available, local tradition and education was not condusive to reducing the change of infection. When many families would bath and care for the ill members, it allowed them to be exposed to the bodily fluids that contain the virus. This led to rampant infection rates and eventually the panic that ensued.
+
+# Conclusion
+
+The data above has some interesting insights in terms of where the highest risk of Ebola outbreak is and what factors contribute to a high infectiona and death rate. Ebola as a virus can be fatal even if the proper medical treatment is received. Treatment such as fluid replacement and supportive care can and usually make a difference between life and death.
+
+The outbreak risk however seems to be related to local environmental factors. By mapping the outbreak first noted cases above, you can see the outbreaks clustering around the jungle regions of the Congo and Gabon. This shows that this area is more at risk for the exposure to Ebola. This may be related to several factors including the remote locations for items such as mining camps and also the lack of available healthcare. It would be safe to assume that these high risk areas would benefit from healthcare education and potential deployment of disease mitigation systems and processes. 
+
+Finally, The risk of Ebola generally speaking is low. The remote nature of the disease and its relatively high mortality rates means that often the victim is deceased a short time after infection. This diminishes the risk of an individual spreading the disease into urban populations. That being said, The common factors of infection source include encountering local wildlife and the consumption of local wildlife. If these sources are exported by means of their own fleeing humans or by being consumed, the risk of infection and spread will remain high in these areas. It should also be noted that not only do the conditions support the incubation and spread of the disease but also the political environment with the noted conflicts over diamonds and resources and even criminal organizations, end up keeping more sophisticated medical resources from exploring and developing a response to another potential outbreak.
+
+
+
+It would be safe to predict with some confidence that the next outbreak will be in this region. The conditions are supportive of development and a lack of medical care and identification will limit the ability to respond to the outbreak. 
+
+# Citations
+
+Dataset reflects outbreaks of Ebola to prior to the 2014 West Africa outbreak.
+Citation -- Mylne, Adrian; Huang, Zhi; Pigott, David; Kraemer, Moritz; Hay, Simon; Brady, Oliver; et al. (2014): Ebola past outbreak geographic spread GIS polygon data (.shp). figshare. Dataset.
+
+
+
