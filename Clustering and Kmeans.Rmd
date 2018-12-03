@@ -1,0 +1,205 @@
+---
+title: "Clustering and Kmeans"
+author: "Daniel Efaw"
+date: "3/12/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, include = FALSE)
+```
+
+Hello, 
+
+In the data analysis below, we look at the clustering algorthms of hclust and the algorthms associated with it. In the second half of the analysis we look at the kmeans and how they cluster.
+
+```{r, message=FALSE, warning=TRUE}
+library(cluster)
+library(e1071)
+library(dplyr)
+library(ggplot2)
+library(factoextra)
+```
+ 
+Quest_1 (and all variants) = Original data structure
+Quest_2 (and all variants) = Transposed data structure
+
+```{r}
+quest_1 <- read.csv("~/Dropbox/BUDA/BUDA 535/q_data_clustering.csv",row.names = 1)
+set.seed(1234)
+ 
+dim(quest_1)
+
+quest_2 <-t(quest_1)
+quest_2 <-as.data.frame(quest_2)
+
+hcluster_fun <- function(x,k) list(cluster=cutree(hclust(dist(x,"euclidian"), method = "complete"),k=k))
+
+## Line 26 transposes the data for a different clustering
+
+quest_matrix <-data.matrix(quest_1)
+quest_2_matrix <- data.matrix(quest_2)
+
+## The lines above coarce the data into a matrix
+```
+```{r}
+
+## Euclidian Distance below
+
+question_hc <- hclust(dist(quest_1, method="manhattan"), "cen")
+plot(question_hc, hang=-1)
+
+question_hc2 <- hclust(dist(quest_1, method = "euclidian"), "complete")
+
+plot(question_hc2)
+
+```
+```{r}
+question_scaled <- scale(quest_1)
+
+question_scaled_hc <- hclust(dist(question_scaled, method = "euclidian"), "complete")
+plot(question_scaled_hc)
+
+question_scaled_hc_cut <- cutree(question_scaled_hc, k = 8)
+
+plot(question_hc)
+
+## The heirarchical clustering utilizing the Manhattan method yeilded way too may clusters to be effective in clustering.
+
+## The heirarchical clustering utilizing the Euclidian method also yeilded a significant amount of clusters and was not effective in an interpretable clustering. 
+
+```
+```{r}
+quest_2_clus <- clusGap(quest_2_matrix, FUNcluster = kmeans, nstart = 20, K.max = 20, B = 20, iter.max = 100)
+  plot(quest_2_clus)
+  
+## The Gap statistic indicates that the best number of clusters for this dataset is around 5. 
+
+quest_2_hclust <- hclust(dist(quest_2, method = "euclidian"), "complete")
+plot(quest_2_hclust)
+
+## The cluster dendrogram on the transposed data is way too noisy to be of any use. 
+
+quest_2_cut<-hcluster_fun(quest_2,5)
+
+quest_2_cut2 <- cutree(quest_2_hclust, k = 5)
+
+table(quest_2_cut)
+
+## The table of the quest 2 cut to 5 (Which the GAP statistic indicated as the best number) shows a heavy leaning on the 1st cluster.
+
+
+```
+```{r}
+
+cent2 <- NULL
+for(k in 1:5){
+  cent2 <- rbind(cent2, colMeans(quest_2[quest_2_cut2 == k, , drop = FALSE]))
+}
+cent2
+
+
+quest_2_restart<- hclust(dist(cent2,method="euclidian"), method = "complete", members = table(quest_2_cut))
+par(mfrow = c(1, 2))
+plot(quest_2_hclust,  labels = FALSE, hang = -1, main = "Original Tree")
+plot(quest_2_restart, labels = FALSE, hang = -1, main = "Re-start from 5 clusters")
+```
+## The restart from 5 clusters shots a much easier to digest clustering. The 2-3 clusters indicate the data is more similiar.
+
+#### Everything below here deals with the original structure of the data.
+
+
+```{r}
+
+question_hc_cut <- cutree(question_hc2, k = 8)
+
+table(question_hc_cut)
+
+
+```
+```{r}
+table(question_hc_cut)
+
+head(question_hc_cut)
+
+cent <- NULL
+for(k in 1:8){
+  cent <- rbind(cent, colMeans(quest_1[question_hc_cut == k, , drop = FALSE]))
+}
+#cent
+
+cent3 <- NULL
+for(k in 1:8){
+  cent3 <- rbind(cent3, colMeans(question_scaled[question_scaled_hc_cut == k, , drop = FALSE]))
+}
+```
+The printout from the head of the question_hc_cut indicates cluster 3 holds the largest number.
+
+```{r}
+
+
+question_selects <- clusGap(quest_matrix, FUNcluster = kmeans, nstart = 20, K.max = 25, B = 20, iter.max = 100)
+  plot(question_selects)
+  
+
+## The number of clusters would be 8. The reason for this is the noted decrease in the gap statistic at 9
+```
+```{r}
+hc2 <- hclust(dist(cent,method="euclidian"), method = "cen", members = table(question_hc_cut))
+hc_scaled <- hclust(dist(cent3, method = "euclidian"), method = "cen", members = table(question_scaled_hc_cut))
+par(mfrow = c(2, 2))
+plot(hc_scaled, labels = FALSE, hang = -1, main = "Scaled Cluster")
+plot(question_hc,  labels = FALSE, hang = -1, main = "Original Tree")
+plot(hc2, labels = FALSE, hang = -1, main = "Re-start from 8 clusters")
+```
+
+
+The clustering with the 8 clusters indicate
+```{r}
+par(mfrow = c(1, 2))
+plot(hc2, labels = FALSE, hang = -1, main = "Re-start from 8 clusters Original Tree")
+plot(hc_scaled, labels = FALSE, hang = -1, main = "Scaled Cluster")
+
+
+```
+
+```{r}
+
+question_cluster <-for(j in 1:8){
+  cat("this is cluster ",j)
+  print(rownames(quest_1[which(question_hc_cut==j),]))
+}
+```
+It would appear that from the print out above, Cluster 2 contains most of the Tech based. 
+```{r}
+question_cluster <-for(j in 1:8){
+  cat("this is cluster ",j)
+  print(rownames(quest_1[which(question_scaled_hc_cut==j),]))
+}
+```
+It appears that cluster 3 contains the majority if not all tech based questions.
+```{r}
+question_kmeans <- kmeans(quest_1, centers = 8, nstart = 25)
+
+question_kmeans2 <- kmeans(question_scaled,centers = 8, nstart = 25)
+
+par(mfrow = c(1,2))
+plot(question_kmeans$cluster, main = "This plot is unscaled")
+plot(question_kmeans2$cluster, main = "This plot is scaled")
+
+
+fviz_cluster(question_kmeans, data = quest_1, main = "Unscaled Data")
+fviz_cluster(question_kmeans2, data = question_scaled, main = "Scaled Data")
+
+
+```
+
+Answer:
+
+What is interesting is the difference even that the same function is performed on both the scaled and unscaled data with the clustering Kmeans. This indicates that scaling has a significant impact on the clustering of the data. If you look at the hclustering in the charts above you can see that scaled data cluster better. It can also be noted when you look at the table of the clustering when the tree is cut to 8 clusters, you can see that the 2nd cluster contains the largest selection of data in the unscaled data. The Scaled data shows a higher cluster in 3rd cluster. 
+
+In terms of the types of questions and their clustering, it appears in the scaled data the cluster 4 contains the vast majority of tech based questions if not all of them. In the unscaled version, it appears that most of cluster 2 contains the tech based questions.  This leads me to believe that the questions could actually be related by the occupation within the company that the person answering the question is in. There would obviously be some outliers in terms of an employee knowing more about a process than is required for their job but the majority who answered the tech questions correct would likely be in the tech based position. 
+
+In terms of relating this to a business problem, this could be related to market segmentation. The cluster 3 would need to be marketed to on a higher technical level. This is would be different than the other segments who scored higher in the common questions and would indicate they worked within other departments within the organization. 
+
+
