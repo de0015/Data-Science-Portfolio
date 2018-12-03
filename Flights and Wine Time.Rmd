@@ -1,0 +1,102 @@
+---
+title: "Time Series analysis of flights and wine trends."
+author: "Daniel Efaw"
+date: "February 18, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+In the first set of analysis, we look at the time series data of monthly airline passengers from 1949-1960. This dataset can be found in Rstudio. The two analysis below look at various methods to in which to predict based on the data. 
+
+
+
+```{r}
+library(forecast)
+library(TTR)
+data("wineind")
+data("AirPassengers")
+head(AirPassengers)
+plot.ts(AirPassengers)
+AirPassengers
+```
+
+```{r}
+decomp_pass <-decompose(log(AirPassengers),type = "additive")
+plot(decomp_pass)
+## The lines above decompose the log of the Airpassengers data with the type of additive.
+```
+When looking at the decomposed data for the Airpassengers data in the additive time series, you can see that the data has an rather apparent leaning towards seasonality. The trend also indicates a generally climbing trend when it comes to international flights over the time points. 
+```{r}
+decomp_pass2 <- decompose(log(AirPassengers), type = "multiplicative")
+plot(decomp_pass2)
+```
+Upon reviewing of the decomposed log of airpassengers in mutiplicative type, it appears that there is more randomness in the years between 1954 and 1958.
+```{r}
+mod2 <- HoltWinters(log(AirPassengers),beta = TRUE, gamma = NULL)
+plot(mod2)
+
+## The lines above utilize the Holt-Winters filtering by minimizing the squared prediction error.
+```
+```{r}
+plot(forecast(mod2, h = 10))
+```
+In the varible mod2 above, we utilize HoltWinters with the log of the airpassengers with the options of beta being true and gamma being null. The model goes further to predict the next 10 data points. It should be noted that the HoltWinters with the BETA being true does not work well at all with the data points in the underlying plot. There is a considerable lag time with this function. The forcast shows a considerable drop for the next 10 data points but does not take into account the seasonality. This model would not be useful or optimal when dealing when accurately predicting the next points.
+
+```{r}
+mod3 <- HoltWinters(log(AirPassengers),beta = TRUE, gamma = TRUE)
+plot(mod3)
+```
+When evaluating mod3 utilizing the HoltWinters, we have set the BETA and GAMMA functions to true. The GAMMA Function does take into account the seasonality and looks a little better than previous but still has some overshot. The forecast of mod3 has some extensive variance and does little to no good to accurately depict the possibilities of the future based on the data.
+```{r}
+plot(forecast(mod3, h = 10))
+
+```
+```{r}
+mod4 <- HoltWinters(log(AirPassengers),beta = NULL, gamma = TRUE)
+plot(mod4)
+```
+Mod4 takes into account the HoltWinters with the Beta = NULL and the Gamma of True. This turns off the expoential smoothing and turns on the Gamma which fits a seasonal model. This appears to be the best evaluation to match the model.
+```{r}
+plot(forecast(mod4, h = 10))
+```
+As you can see, the plot with the mod4 specifications has a fairly steady prediction. Another interesting concept to this is that when it comes to vacations and the international travel it appears that many of the vacations around the summer months. The graph does not indicate the level of international travel such as Northern Hemisphere to Southern or even something like US to Canada or Mexico. The seasonality is explained in both the models and in the logical concept that many travelers like to take a vacation during the summer months which would correlate to the seasonality shown here.
+```{r}
+auto.arima(log(AirPassengers))
+```
+
+
+Analysis 2:
+
+The second analysis below takes a detailed look at time series data for wine purchasing. The approach utilizes the ARIMA modeling as well as Holt Winters Modeling. 
+
+
+```{r}
+plot(wineind)
+wine1 <- HoltWinters(wineind, beta = NULL, gamma = TRUE)
+plot(wine1)
+```
+When looking at the plot it appears that there is some lag noted.
+```{r}
+wine_decomp <- decompose(log(wineind))
+plot(wine_decomp)
+```
+
+
+```{r}
+auto.arima(wineind, seasonal = TRUE ) 
+```
+```{r}
+acf(wineind,plot = FALSE)
+## The ACF indicates a lag of 1.
+winearima <-arima(wineind)
+plot(forecast(winearima, h = 10))
+wine1
+```
+The ACF command indicates that the Lag is at one which means that the data is correlated to itself.
+
+After comparing the two I would stick with the Arima model. It should be noted that the forecast involving the ARIMA model indicates a significant amount of variation in the forcast.   

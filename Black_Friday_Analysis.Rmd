@@ -1,0 +1,122 @@
+---
+title: "Black Friday Data"
+author: "Daniel Efaw"
+date: "8/1/2018"
+output:
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(caret)
+library(randomForest)
+library(tree)
+library(nnet)
+library(rpart)
+library(RWordPress)
+library(knitr)
+options(WordpressLogin = c(firemedic15 = 'Daniboy18'),
+        WordpressURL = 'https://www.danielefaw.com/xmlrpc.php')
+knit2wp("Black_Friday_Analysis.Rmd","Sales data analysis for Black Friday", publish = FALSE)
+
+```
+
+
+### Data Import and Prep
+```{r message=FALSE, warning=FALSE, include=FALSE}
+dat_1 <- read.csv("~/Desktop/Datasets/black-friday/test.csv")
+dat_2 <- read.csv("~/Desktop/Datasets/black-friday/train.csv")
+
+```
+```{r}
+## Data Obtained from Kaggle datasets
+
+dat_2 <- dat_2[c(1:11)]
+dat <- rbind(dat_1,dat_2)
+dat <- dat[c(3:8)]
+```
+### Recoding of certain variables
+```{r}
+dat$Marital_Status <- with(dat, ifelse(Marital_Status == 0, "Unmarried",
+                                            ifelse (Marital_Status == 1, "Married",
+                                                    Marital_Status)))
+dat$Marital_Status <- as.factor(dat$Marital_Status)
+
+dat$Age_Group <- with(dat, ifelse(Age == "0-17", "Under 18",
+                                  ifelse(Age == "18-25", "Young Adult",
+                                  ifelse(Age == "26-35", "Adult",
+                                  ifelse(Age == "36-45", "Middle Age",
+                                  ifelse(Age == "46-50", "Late Adult",
+                                  ifelse(Age == "55+", "Senior",
+                                         Age)))))))
+dat$Age_Group <- as.factor(dat$Age_Group)
+```
+
+
+### Summary Statistics of the Data
+```{r}
+
+par(mfrow=c(3,2))
+ggplot(data = dat, mapping = aes(Age)) +
+  geom_bar(aes(color = Age))
+
+ggplot(data = dat,mapping = aes(Gender))+
+  geom_bar(aes(color=Gender))
+
+ggplot(data = dat, mapping = aes(Age)) +
+  geom_bar(aes(color = Marital_Status))
+
+```
+```{r}
+
+table(dat$Marital_Status)
+## Married Unmarried 
+## 321129    462538 
+
+
+table(dat$Age)
+
+# 0-17  18-25  26-35  36-45  46-50  51-55    55+ 
+# 21334 141953 313015 156724  65278  54784  30579 
+
+table(dat$Gender)
+
+#     F      M 
+#  193636 590031 
+```
+### Partition
+```{r}
+row_count <- nrow(dat)
+shuffled_rows <- sample(row_count)
+dat_train <- dat[head(shuffled_rows,floor(row_count*0.75)),]
+dat_test <- dat[tail(shuffled_rows,floor(row_count*0.25)),]
+```
+### Modeling 
+```{r}
+M1 <-glm(Gender ~ ., data = dat_train, family = "binomial"(link = "logit"))
+M2 <-glm(Age ~ ., data = dat_train, family = "binomial"(link = "logit"))
+M3 <-glm(Marital_Status ~ ., data = dat_train, family = "binomial"(link = "logit"))
+M4 <- randomForest(Gender ~ ., data = dat_train)
+anova(M1)
+anova(M2)
+anova(M3)
+AIC(M1,M2,M3)
+M1
+M2
+M3
+M4
+```
+ 
+
+# Analysis: The Black Friday Data has numerous avenues in which can be explored. One item that jumped out was more so along the lines of the demographics of those who took advantage of the price changes for those products.  
+
+Of the dataset contained, 75.2% of the population contained was male and 59% of the total population was unmarried. From a business perspective, this creates a whole host of questions and potential challenges. For example, one question that is not answered is the type of retail that are contained in this data. Due to the large male population, I tend to believe that these are either contain a selection of male targeted stores or atleast a wide range of stores. This is also supported by the random forest in M4 which indicated a 78.6% accuracy rate with the predictions that the shopper would be male. 
+
+The data also indicates that the primary age grouping for Black Friday shopping is the 26-35 Age range which puts the highest levels in the early to late adult hood classification. 
+
+
+# Business Impact
+
+From a business perspective, this creates a unique view of the shopping environment. By understanding that there is a correlation between the age group and gender, it shows that a business would see a higher return by tailoring their marketing strategy to this demographic. It also shows that the highest demographic of 26-35 are unmarried males. The data also shows that as the group ages into the next bracket, you see a leveling of married vs unmarried shoppers. This indicates a change in dynamic and a subsequent change in marketing strategy. If more data were available such as the total of each sale, we could improve the accruacy of the prediction as well as increase the probability of increasing revenues.
+
