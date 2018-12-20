@@ -37,7 +37,7 @@ ebola_data <- read_excel("~/Desktop/Datasets/ebola/Table_1.xls")
 ```
 ### Ebola Outbreaks on record
 
-The outbreak of the Ebola virus in 2014 commanded the world’s attention. For one of the first times in the history of the virus, the potential for widespread infection crossed the minds of health officials. This sparked widespread panic about what exactly the virus is and its mortality rates. This also sparked many health officials to reevaluate their epidemiological plans and how they intended to deal with the potential outbreak of a disease.  
+The outbreak of the Ebola virus in 2014 commanded the world's attention. For one of the first times in the history of the virus, the potential for widespread infection crossed the minds of health officials. This sparked widespread panic about what exactly the virus is and its mortality rates. This also sparked many health officials to reevaluate their epidemiological plans and how they intended to deal with the potential outbreak of a disease.  
 
 The illustration below shows the historical spread of the disease. The challenge with this dataset is that the shape file does not indicate the timeframe in which the disease has spread or which episode is responsible.
 

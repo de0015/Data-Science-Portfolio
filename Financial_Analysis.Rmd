@@ -1,0 +1,122 @@
+---
+title: "Financial Analysis of Stock Pricing Factors"
+author: "Daniel Efaw"
+date: "12/17/2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Libraries, include=FALSE}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(quantmod)
+library(Quandl)
+library(forecast)
+library(xts)
+library(zoo)
+```
+# Stock Visualizations and Analysis with R
+
+## Company: Mylan Pharmaceuticals
+```{r message=FALSE}
+dat <- getSymbols("MYL",src="yahoo")
+
+```  
+
+# Stock Visualizations based on the Open price, High price, Closing price and Volumn traded. 
+
+
+The data below is a visualization of the open, high, close and volume traded since 2007. One particular item to note is that MYL sustained heavy growth from 2007 ((when they went global) until they peaked in 2014/2015. The reason for this was simultaneous major moves by both Mylan and its competitor Teva.
+
+
+##The Background
+
+In 2015, TEVA attempted to merge with Mylan by offering the shareholders around $80/share. At the same time, Mylan attempted a buy out of the Ireland based Perrigo pharmaceuticals and subequently was not successful. This caused heavy casualties on both Teva and Mylan. The charts below reflect the rapid decline from the 70/share that Mylan was previously trading to a stablized price of around 40-45/share. 
+
+```{r}
+candleChart(MYL,multi.col = TRUE, theme = "white")
+
+
+par(mfrow=c(2,2))
+plot(MYL$MYL.Open, main = "Open Price")
+plot(MYL$MYL.High, main = "High Price")
+plot(MYL$MYL.Close, main = "Closing Price")
+plot(MYL$MYL.Volume, main = "Volume Traded")
+
+```
+# Time Series Analysis of Stock Highs
+```{r}
+dat.ts.high <- as.ts(MYL$MYL.High)
+dat.ts.close <- as.ts(MYL$MYL.Close)
+
+dat.ts <- ts(MYL, start=c(2015, 1), end=c(2018, 12), frequency=12) 
+dat.ts.high <- ts(MYL$MYL.High, start=c(2014, 1), end=c(2018, 12), frequency=12)
+dat.ts.close <- ts(MYL$MYL.Close, start=c(2014, 1), end=c(2018, 12), frequency=12)
+
+yr_07_12 <- MYL["/2012-12"] %>%
+  ts(, start=c(2007, 1), end=c(2012, 12), frequency=12) %>%
+  plot()
+
+  
+
+## The code above sets the two variables of the time series. The first 
+```
+From its early days, Mylan experienced exponetial growth. As previously mentioned, the company went "global" in 2007 with their acquisition of the India based pharmaceutical company known as Matrix Labs. Matrix labs put Mylan on the map when it came to global companies. If you look at the charts above, you will notice that Mylan went through period of rapid growth when it comes to the stock price. The growth was even more apparent between 2008 and 2009 where the company enjoyed rapid expansion. There was a brief drop in investor confidence and stock price in 2011. 
+
+
+
+```{r}
+
+decomp.ts <-decompose(dat.ts, type = "additive") 
+
+plot(decomp.ts$x, main = "Decomposed Trend")
+
+
+high <- auto.arima(dat.ts.high)
+close <- auto.arima(dat.ts.close)
+
+summary(high)
+```
+The charts above indicate a decomposed view of the trend within the price. One item that is different is that since 2016-2017 the investor confidence was still high. During this time, Mylan was subjected to a backlash of social media and consumer protesting. In the fall of 2016, the EpiPen crisis took off. 
+
+By the fall of 2016, consumers had begun to feel the pressure of increased deductibles from their insurances. Many consumers had put off buying medications in hopes of staving off the pending cost of healthcare under the Affordable Care Act. Although the Affordable Care Act was signed into law with the intention of preventing the loss of insurance, there were some unforeseen side effects. The affordable care act did in fact prevent the loss of insurance due to things like preexisting conditions. However, to mitigate the new costs, insurance providers increased premiums and deductibles. This is the spark that started the EpiPen crisis. 
+
+Mylan had raised the cost of an EpiPen to around $600 for a two pack of the autoinjectors. This was intended to increase revenue and to push the cost onto the insurance provider. This was not much different in practice then what has happened for years. The difference now was that insurance providers created a loop hole in which they were passing the cost of the medication on to the subscriber. For the first time in many people's memory, they were liable for the full cost of a medication. This was not the fault of the subscriber. Many of which were just happy to have health insurance. The issue came when they subscriber signed on with a deductible of around 1000 or even 1500. In a catastrophic accident, this would have been a minor detail when many average emergency room bills can reach the tens of thousands of dollars. This was a catalyst for the events that followed. 
+```{r}
+MYL %>%
+  ts( , start=c(2016, 1), end=c(2018, 12), frequency=12) %>%
+  plot()
+
+MYL %>%
+  ts( , start=c(2017, 1), end=c(2018, 12), frequency=12) %>%
+  plot()
+
+```
+The company had endured round after round of localized protesting and social media backlash. The interesting thing about social media is that it has a habit of being notoriously unforgiving. Although in this analysis, the social media traffic data is unavailable, there is sufficient evidence to support that the traffic and outcry did have a notable impact on government entities.
+
+Although, things looked grim on the social front, the charts above tell a different story regarding investor confidence. In 2017, there is a noticable trend in the Close data that indicates a slow decline on the pricing front. It would appear that in 2018, Mylan started a steady decline which may be attributed to both governmental concerns (President Trump Twitter) and the slowing investor confidence in the generics market. It should also be noted that the accelerated downturn in mid-2018 may be related to the lawsuit naming Mylan in terms of a price fixing charges brought by the federal government. It should be noted that Mylan was named along with several other companies. 
+
+
+#Forecasting the price
+```{r}
+plot(forecast(dat.ts.close, h = 24), main = "Forecasted Stock Price Closing")
+plot(forecast(dat.ts.high, h = 24),main = "Forecasted Stock Price Highs")
+```
+In the above models, the forecasted price of the stock has a significant variance. The forecasted stock closing price over the next 24 months varies as much as 5 USD/Share. Although this is extreme in nature, the more likily variance is around +/- 2-3 USD. 
+
+
+
+# Analysis
+
+Although much of the analysis above chronicals the rise and subsequent decline of Mylan's public common stock price, there are several things to take into account. The company has a significant portfolio of medications that have not reached their full potential in terms of returns. Much of their R&D is in the FDA approval pipeline and often creates a drag on the public confidence.
+
+Although the pricing outlook at the moment looks grim, investors should remember that pricing is the public opinion of the company and does not always reflect the current financial and operational standing. Mylan's revenue streams have grown consistantly over the last 5 years with smaller growth noted last year due to slowing sales data. The company is still in extremely healthy standing and still continues to deliver a significant portion of the generics industry. It is extremely likily that investors will see a climb in price once the market stabilizes and more products are brought to market. 
+
+
+
