@@ -1,0 +1,188 @@
+---
+title: "Opioid Overdose CDC Data"
+author: "Daniel Efaw"
+date: "5/2/2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE)
+```
+
+In the middle to late 2010’s a new health crisis appeared which was many did not expect to have such a profound impact on the American population. Beginning in late 2000’s the use of opiate based pain management was exploding. Pharmaceutical companies such as Purdue Pharma were selling vast quantities of Opiate based medications like Oxycodone and Hydrocodone throughout the United States. These medications at the time were not regarded with any concern of the potential abuse and subsequent addiction powers as they would later reveal.
+
+In recent years, the study of addiction and the root causes have created a new appreciation for what substance abuse does. The proven fact that chemical changes occur and change the brain’s function at root levels creates a vast new understanding of what drove this crisis. 
+
+In the analysis below, we will take a deep dive into the opiate crisis beginning tin 2015 and continuing to 2017 (most recent CDC data available) across the US. We will primarily look at the Appalachia region due to its profound effect and extremely large variance in socioeconomic environment. The data tells a unique story not of poor vs rich, nor of intelligent vs ignorance. It tells a story of a root level chemical change in which impacted a large swath of the US and did not discriminate in its victims.  
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(jsonlite)
+library(tidyverse)
+library(RWordPress)
+library(knitr)
+library(XMLRPC)
+library(dplyr)
+library(ggplot2)
+library(usmap)
+library(magrittr)
+options(WordpressLogin = c(******** = '**********'),
+        WordpressURL = 'https://danielefaw.com/xmlrpc.php')
+knit2wp(
+        input = "Opioid_Analysis.Rmd", 
+        title = "Opiate analysis with CDC Data", 
+        publish = FALSE,
+        action = "newPost")
+```
+
+```{r echo=TRUE}
+dat <- read_csv("~/Dropbox/Data Analysis for Portfolio/VSRR_Provisional_Drug_Overdose_Death_Counts.csv") %>%
+  na.omit()
+dat <- dat[1:9]
+dat_app <- filter(dat, State %in% c("WV", "PA", "OH", "KY")) %>%
+  as.data.frame() 
+
+dat_app_2015 <- filter(dat_app, Year == "2015")
+dat_app_2016 <- filter(dat_app, Year == "2016")
+dat_app_2017 <- filter(dat_app, Year == "2017")
+```
+In the code above, we load the CDC dataset of Drug overdose death counts as reported by medical examiners office to the CDC. We filter the data to only have from WV, PA, OH and KY. This is to break out the region that was most heavily impacted by the crisis. It also shows the most profound growth in terms of per capita deaths related to opiate use.
+```{r echo=TRUE}
+wv_2015 <- dat_app_2015 %>% 
+  select(1:9) %>%
+  filter(State == "WV")
+
+wv_2016 <- dat_app_2016 %>% 
+  select(1:9) %>%
+  filter(State == "WV")
+
+wv_2017 <- dat_app_2017 %>% 
+  select(1:9) %>%
+  filter(State == "WV")
+
+ky_2015 <- dat_app_2015 %>% 
+  select(1:9) %>%
+  filter(State == "KY")
+
+ky_2016 <- dat_app_2016 %>% 
+  select(1:9) %>%
+  filter(State == "KY")
+
+ky_2017 <- dat_app_2017 %>% 
+  select(1:9) %>%
+  filter(State == "KY")
+
+oh_2015 <- dat_app_2015 %>% 
+  select(1:9) %>%
+  filter(State == "OH")
+
+oh_2016 <- dat_app_2016 %>% 
+  select(1:9) %>%
+  filter(State == "OH")
+
+oh_2017 <- dat_app_2017 %>% 
+  select(1:9) %>%
+  filter(State == "OH")
+
+pa_2015 <- dat_app_2015 %>% 
+  select(1:9) %>%
+  filter(State == "PA")
+
+pa_2016 <- dat_app_2016 %>% 
+  select(1:9) %>%
+  filter(State == "PA")
+
+pa_2017 <- dat_app_2017 %>% 
+  select(1:9) %>%
+  filter(State == "PA")
+```
+In the graphs below we look at the number of opiate related deaths in WV. One item of note is that over the course of the last several years, there has been an exponential growth noted, year after year. This coincides with local news outlets which at the time, began reporting that there was a noted increase in the number of opiate related overdoses. 
+
+```{r echo=TRUE}
+
+par(mfrow=c(2,2))
+plot(wv_2015$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in WV in 2015")
+
+plot(wv_2016$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in WV in 2016")
+
+plot(wv_2017$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in WV in 2017")
+```
+The graphs below also indicate an exponential growth in Kentucky with a noted stabilization in 2017.  
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+plot(ky_2015$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in KY in 2015")
+
+plot(ky_2016$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in KY in 2016")
+
+plot(ky_2017$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in KY in 2017")
+```
+In the graphs below, we see that Pennsylvania was an exception to that rule given the noted drop in ladder half of 2017. This could be attributed to the efforts of combatting the opiate epidemic in the larger cities. 
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+plot(pa_2015$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in PA in 2015")
+
+plot(pa_2016$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in PA in 2016")
+
+plot(pa_2017$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in PA in 2017")
+
+```
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+plot(oh_2015$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in OH in 2015")
+
+plot(oh_2016$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in OH in 2016")
+
+plot(oh_2017$`Data Value`, type = "b", xlab = "Month", ylab = "Number of deaths", main = "Number of Opioid Deaths in OH in 2017")
+```
+The overall plots below indicate that there were several years of unchecked growth of opiate related overdoses.The dataset that is utilized here is purposely subset to only include those areas in Appalachia which have similar socialeconomic and environmental factors. Although this data is not reflected in the CDC data, much of the area reporting face similar issues of education and job outlook.   
+```{r echo=TRUE}
+wv_all <- bind_rows(wv_2015,wv_2016,wv_2017)
+pa_all <- bind_rows(pa_2015,pa_2016,pa_2017)
+oh_all <- bind_rows(oh_2015,oh_2016,oh_2017)
+ky_all <- bind_rows(ky_2015,ky_2016,ky_2017)
+
+
+````
+```{r echo=TRUE}
+par(mfrow=c(2,2))
+plot(wv_all$`Data Value`, main = "WV Opiate Related Overdoses", ylab = "Number of overdoses", xlab = "Months from Jan 2015")
+plot(pa_all$`Data Value`,main = "PA Opiate Related Overdoses", ylab = "Number of overdoses", xlab = "Months from Jan 2015")
+plot(oh_all$`Data Value`, main = "OH Opiate Related Overdoses", ylab = "Number of overdoses", xlab = "Months from Jan 2015")
+plot(ky_all$`Data Value`, main = "KY Opiate Related Overdoses", ylab = "Number of overdoses", xlab = "Months from Jan 2015")
+```
+The models below are linear regression models in which take into account the growth and projected growth. The first model takes into account the growth in WV.
+
+```{r echo=TRUE}
+mod1 <- lm(wv_all$`Data Value` ~ Year, data = wv_all) 
+mod1_pred <- predict(mod1) %>%
+  scatter.smooth()
+mod2 <- lm(ky_all$`Data Value` ~ Year, data = ky_all) 
+mod2
+mod2_pred <- predict(mod2) %>%
+  scatter.smooth()
+```
+
+```{r echo=TRUE}
+mod3 <- lm(pa_all$`Data Value` ~ Year, data = pa_all)
+
+mod3_pred <- predict(mod3) %>%
+  scatter.smooth()
+```
+
+
+
+
+
+
+The models above indicate a predicted expoential growth over the next 35 months. This is troubling if there is no recourse to bring epidemic into focus, we can and most likily will be looking at continued overdoses.
+
+One thing to keep in mind is that most overdoses are not opiates alone. Many times an overdose is related to multiple medications being found in a persons system at one time. This would include but is not limited to utilizing benzodiazepines or alcohol to enhance the effects of the opiate.
+
+
+The one thing to keep in mind is that in this particular dataset, we are only looking at the CDC available data. This does not provide a complete view of the situation. The CDC data only provides the information that is escalated to them. This view is minorly skewed because not all data was provided to the CDC. In the areas above, there exists the possibility of data points not being recorded due to location and even local reporting protocols. This is in addition to if there was an investigation that determined that the individual had opiates in their system at time of death. 
+
+The overarching theme is that although it looks like we may have slowed the growth of the opiate epidemic, there exists a extremely strong growth correlation in which if we do not look at better ways to mitigate the problem, it will quickly grow out of control.
+
+
+
+
