@@ -62,3 +62,8 @@ Hi! Welcome to my R Work Repo. This repo contains examples of my work utilizing 
 
    <b>Analysis:</b> This file utilized splines and the wage data to explore the non linear relationship between those who had advanced degrees and their expected/reported wages. Reported wage data did exhibit a noted favor towards those with advanced degrees vs those who have only a High School education. 
 
+11) <b>File:</b> Border Crossing Analysis.Rmd
+
+    <b>Dataset:</b> Customs and Border Crossing Data for US/Canada/Mexico (Kaggle)
+    
+    <b>Analysis:</b> This file explores the number of commercial and non commercial crossings between both borders of the United States. The data includes counts from 1990 to 2016 and shows a number of insights including but not limited to; concentrated crossing locations, spikes in crossings in both commercial traffic and non commercial traffic, which ports are commonly used and at what times. 
