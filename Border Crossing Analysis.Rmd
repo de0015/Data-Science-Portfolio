@@ -1,0 +1,286 @@
+---
+title: "Border Crossing Analysis"
+author: "Daniel"
+date: "10/29/2019"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Border security has always been a unique challenge to state security. Countries often spend large portions of their budget on border security and defenses. This can range from a small percentage to well over 40 percent of their total defense budget. The argument of defense often bleeds over into the concept of immigration but that is not the focus of this document. 
+
+In the document below, we will explore the number of border crossings on both the US/Canadian border as well as the US/Mexico border and see where our biggest challenges lie. By studying the dynamics of migration across both borders, we can efficiently evaluate and predict the need for specialized border services. By doing so, we can reduce overhead and provide more specialized/expediated services at the border to make transitioning smooth and secure.
+
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyselect)
+library(magrittr)
+library(forecast)
+library(stringr)
+library(lubridate)
+library(formattable)
+library(ggmap)
+library(gridExtra)
+dat <- read.csv("C:/Users/Dan/Desktop/border-crossing-entry-data/Border_Crossing_Entry_Data.csv")
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+```
+
+```{r warning=FALSE}
+colnames(dat)[colnames(dat)=="Measure"] <- "Vehicle"
+
+#dat_sub <- subset(dat, Value > 10000)
+
+#ggplot(data = dat_sub, mapping = aes(Vehicle,Value)) +
+#  geom_point(aes(color = Value)) 
+
+dat$Date <- mdy_hms(dat$Date)
+
+US_CAN <- filter(dat , Border == "US-Canada Border") %>%
+  filter(Value > 1) %>%
+  group_by(Date)
+
+
+
+US_Mex <- filter(dat, Border == "US-Mexico Border") %>%
+  filter(Value > 1)
+
+```
+## US Canada Border Analysis
+
+```{r warning=FALSE}
+ggplot(data = US_CAN, aes(State,Value)) +
+geom_point(aes(color = Value))
+
+US_CAN_YR <- US_CAN
+
+US_CAN_YR$Date = as.numeric(format(US_CAN_YR$Date, "%Y"))
+
+
+total_2019 <- sum(US_CAN_YR$Value[which(US_CAN_YR[,5]=="2019")])
+
+```
+
+## New York Analysis
+```{r warning=FALSE}
+
+New_York <- filter(US_CAN, State == "New York" )
+
+mean(New_York$Value)
+
+## The mean is 53542.2
+
+New_York$Date = as.numeric(format(New_York$Date, "%Y"))
+
+New_york_2000_19 <- filter(New_York, Date == 2000:2019)
+
+
+
+ggplot(data = New_York, aes(Date,Value)) +
+  geom_point(aes(color = Value)) +
+  labs(title = "Border Crossings since 1995 in New York State") +
+  ylab("Number of Vehicles")
+
+ggplot(data = New_york_2000_19, aes(Date,Value)) +
+  geom_point(aes(color = Value)) +
+   labs(title = "Border Crossings since 2000 in New York State") +
+  ylab("Number of Vehicles")
+
+
+```
+
+
+```{r warning=FALSE}
+
+Buffalo_Pass <- filter(New_york_2000_19, Port.Name == "Buffalo-Niagara Falls") 
+
+Buffalo_non_commercial <- Buffalo_Pass %>%
+    as_data_frame() %>%
+    select(Vehicle,Value) %>%
+    filter(str_detect(Vehicle, "Personal"))
+
+
+
+Buffalo_commercial <- Buffalo_Pass %>%
+    as_data_frame() %>%
+    select(Vehicle,Value) %>%
+    filter(str_detect(Vehicle, "Truck")) 
+
+Buffalo_commercial_total <- sum(Buffalo_commercial$Value)
+Buffalo_non_commercial_total <- sum(Buffalo_non_commercial$Value)
+
+Buffalo_Totals <- merge(Buffalo_commercial_total, Buffalo_non_commercial_total)
+
+names(Buffalo_Totals)[names(Buffalo_Totals) == "x"] <- "Commercial"
+
+names(Buffalo_Totals)[names(Buffalo_Totals) == "y"] <- "Personal"
+
+p6 <- ggplot(Buffalo_commercial , aes(Vehicle,Value)) +
+  geom_boxplot(aes(color = Value)) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  labs(title = "Plot of Commercial Vehicles")
+  
+
+p7 <- ggplot(data = Buffalo_non_commercial, aes(Vehicle,Value)) +
+  geom_boxplot(aes(color = Value)) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  labs(title = "Plot of Non-Commercial")
+
+comparison_buf <- table(Buffalo_Totals) %>%
+  as.data.frame()
+
+p_change = 2248352/19962798
+
+p_change <- percent(p_change)
+
+paste0("By looking at the commercial vs private traffic at the Buffalo border, we can see that private travel is higher than commercial crossings by ", p_change)
+
+
+```
+
+## Michigan Analysis
+```{r warning=FALSE}
+Michigan <- filter(US_CAN, State == "Michigan" )
+
+
+Michigan$Date = as.numeric(format(Michigan$Date, "%Y"))
+
+Michigan_2000_19 <- filter(Michigan, Date == 2000:2019)
+
+Michigan_non_commercial <- Michigan_2000_19 %>%
+    as_data_frame() %>%
+    select(Vehicle,Value) %>%
+    filter(str_detect(Vehicle, "Personal"))
+
+
+Michigan_commercial <- Michigan_2000_19 %>%
+    as_data_frame() %>%
+    select(Vehicle,Value) %>%
+    filter(str_detect(Vehicle, "Truck")) 
+
+Michigan_commercial_total <- sum(Michigan_commercial$Value)
+Michigan_non_commercial_total <- sum(Michigan_non_commercial$Value)
+
+p8 <- ggplot(Michigan_commercial , aes(Vehicle,Value)) +
+  geom_boxplot(aes(color = Value)) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  labs(title = "Plot of Commercial Vehicles")
+  
+
+p9 <- ggplot(data = Michigan_non_commercial, aes(Vehicle,Value)) +
+  geom_boxplot(aes(color = Value)) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  labs(title = "Plot of Non-Commercial")
+
+multiplot(p8,p9)
+```
+
+# US-Mexco Border Analysis
+```{r warning=FALSE}
+ggplot(data = US_Mex, aes(State,Value)) +
+geom_point(aes(color = Value))
+```
+You can notice that in the chart above, the highest level of crossings exist in the states of Texas & California. This is likely due to the proximity of the major metro areas. Texas has multiple larger cities that are geographically situated on the border and contribute to the count of crossing. In the lines below, we break down the counts for Texas and California to see what type of traffic is the most common.
+```{r warning=FALSE}
+
+Texas <- filter(US_Mex, State == "Texas" )
+
+mean(Texas$Value)
+
+## The mean is 53542.2
+
+Texas$Date = as.numeric(format(Texas$Date, "%Y"))
+
+Texas_2000_19 <- filter(Texas, Date == 2000:2019)
+
+
+Texas_non_commercial <- Texas_2000_19 %>%
+    as_data_frame() %>%
+    select(Vehicle,Value) %>%
+    filter(str_detect(Vehicle, "Personal"))
+
+
+Texas_commercial <- Texas_2000_19 %>%
+    as_data_frame() %>%
+    select(Vehicle,Value) %>%
+    filter(str_detect(Vehicle, "Truck")) 
+
+Texas_commercial_total <- sum(Texas_commercial$Value)%>%
+  scale()
+
+Texas_non_commercial_total <- sum(Texas_non_commercial$Value) %>%
+  scale()
+
+p12 <- ggplot(Texas_commercial , aes(Vehicle,Value)) +
+  geom_boxplot(aes(color = Value)) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  labs(title = "Plot of Commercial Vehicles") 
+  
+
+p13 <- ggplot(data = Texas_non_commercial, aes(Vehicle,Value)) +
+  geom_boxplot(aes(color = Value)) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  labs(title = "Plot of Non-Commercial")
+
+p12
+
+p13
+```
+```{r warning=FALSE}
+ts_buff <- Buffalo_Pass %>% select(7) %>%
+ts(, start = 2000, end = 2018 ) 
+plot(ts_buff)
+```
+The time series graph above indicates that there was a significant spike in 2015 in regards to non commercial traffic at the Buffalo crossing. It also shows that there is not a significant seasonality to the crossing count which possibly indicates an outside change which promoted more crossings. 
+
+# Conclusion
+
+The analysis above indicates that although much of the border conversation in the political world is around the US/Mexico border, there is still significant traffic on the Us/Canadian border. Although it would require more data and analysis, it would be safe to extrapolate that based on tourism and commercial traffic, the investment on smooth transition border controls would be beneficial on the US/CAD border. 
+
+It's interesting to note that the US/CAD spike in crossings are not along the vast open areas of places like North Dakota. They are more situated around New York (Buffalo and Niagra) and Washington State (Near Vancouver). This gives the indication that although there are vast open areas for crossing the border, the population and available work often drives the crossings. Additionally speaking, given the large number of commercial vehicles included in this analysis, we can see that the US/Canadian trade agreement has a very distinct impact on commerce and should be prioritized when creating more streamlined processes for the crossing. 
+
+One final note regarding the financial aspect of this analysis. Given the data above and the few areas that experience the most crossings, it would be fiscally prudent to consider the possibility of automating the border crossings in the lesser traveled areas. This would greatly reduce the overhead and demand on the US and Canadian border control and would allow for a savings or subsequent redeployment of resources. 
+
+
+
