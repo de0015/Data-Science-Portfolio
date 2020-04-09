@@ -67,3 +67,9 @@ Hi! Welcome to my R Work Repo. This repo contains examples of my work utilizing 
     <b>Dataset:</b> Customs and Border Crossing Data for US/Canada/Mexico (Kaggle)
     
     <b>Analysis:</b> This file explores the number of commercial and non commercial crossings between both borders of the United States. The data includes counts from 1990 to 2016 and shows a number of insights including but not limited to; concentrated crossing locations, spikes in crossings in both commercial traffic and non commercial traffic, which ports are commonly used and at what times. 
+
+12) <b>File:</b> NewAPI.Rmd
+
+    <b>Dataset:</b> This data is live data from Statwox API, New York Times and Johns Hopkins COVID-19 data
+    
+    <b>Analysis:</b> This project is a little bit different as compared to others within the portfolio. This utilizes real time data extracted from the Statwox api as well as mined from the New York Times and Johns Hopkins github uploads. This allows the most up to date data.
