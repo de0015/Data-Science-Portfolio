@@ -1,0 +1,194 @@
+---
+title: "COVID-19 Dashboard"
+output:
+  flexdashboard::flex_dashboard:
+    storyboard: true
+  
+---
+
+```{r setup, include=FALSE}
+```
+```{r include=FALSE}
+library(httr)
+library(dplyr)
+library(jsonlite)
+library(ggplot2)
+library(ggpubr)
+library(magrittr)
+library(RCurl)
+library(knitr)
+library(flexdashboard)
+library(viridis)
+library(usmap)
+library(shiny)
+library(markdown)
+library(rmarkdown)
+library(knitr)
+
+### Lines 21 - 41 pull in Country level (df), State level (state_covid) and county level (county_covid)
+#knit2html("NewAPI.Rmd",output="NewAPI.html")
+
+# Post to API
+payload <- list(code = "ALL")
+response <- httr::POST(url = "https://api.statworx.com/covid",
+                       body = toJSON(payload, auto_unbox = TRUE), encode = "json")
+
+# Convert to data frame
+content <- rawToChar(response$content)
+df <- data.frame(fromJSON(content))
+
+# Grab State Data
+
+state_covid <- getURL("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+
+
+
+county_covid <- getURL("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+
+# Once the data is pulled in, I convert the raw text to csv
+
+state_covid <- read.csv(text = state_covid)
+county_covid <- read.csv(text = county_covid)
+
+pa_cases <- filter(county_covid, state == "Pennsylvania")
+
+wv_cases <- filter(county_covid, state == "West Virginia")
+
+# The data below is from Johns Hopkins Dataset
+
+yesterday <- format(Sys.Date()-1,"%m-%d-%Y.csv")
+
+data_url <- paste0("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/",yesterday) 
+
+jh_state <- getURL(data_url)
+
+jh_state <- read.csv(text = jh_state) 
+
+# The data below is state level Johns Hopkins
+
+jh_wv <- filter(jh_state, Province_State == "West Virginia") %>% arrange(desc(Confirmed))
+
+names(jh_wv)[1] <- "fips"
+
+jh_pa <- filter(jh_state, Province_State == "Pennsylvania") %>% arrange(desc(Confirmed))
+
+names(jh_pa)[1] <- "fips"
+
+names(jh_pa)[12] <- "Location"
+
+names(jh_wv)[12] <- "Location"
+
+```
+```{r include=FALSE}
+# Filtering the dataset for United States, China, France, Italy, United Kingdom and Canada. This gives a wide range of deeply impacted locations as well as those with more successful mitigation methods
+
+df_2 <- filter(df, code %in% c("US", "CN", "FR", "IT","UK","CA"))
+
+# date_eval is used to pull system date minus 2 days to ensure the data was uploaded is available. This mitigates the issue of slow uploads/updates by the data provider.
+date_eval<- format(Sys.Date()-2,"%Y-%m-%d")
+
+wv_current_cases <- filter(wv_cases, date == date_eval)
+
+pa_current_cases <- filter(pa_cases, date == date_eval)
+
+df_2$date <- as.Date(df_2$date)
+
+p_2 <- ggplot(df_2, aes(x = date, y = cases_cum)) +
+  geom_line(aes(colour=country, group=country), size = .7) +
+  labs(title = "Cumulative COVID-19 Cases") +
+  xlab("Date") +
+  ylab("Total Cases") +
+  scale_y_continuous(name="Total Cases", labels = scales::comma)
+
+wv_map <- plot_usmap("counties", data = jh_wv, values = "Confirmed", alpha = 1.5,
+                  include = "WV")+
+  theme(legend.position = "right")+
+  labs(title = "COVID-19 Cases by county in WV") + 
+  scale_fill_continuous(
+    low = "white", high = "red", name = "Confirmed COVID-19 Cases in WV", label = scales::comma
+  )  
+
+pa_map <- plot_usmap("counties", data = pa_cases, values = "cases", alpha = 3,
+                  include = "PA")+
+  theme(legend.position = "right")+
+  labs(title = "COVID-19 Cases by county in PA") + 
+  scale_fill_continuous(
+    low = "white", high = "red", name = "Confirmed COVID-19 Cases in PA", label = scales::comma
+  )                   
+
+full_us_map <- plot_usmap(data = state_covid, values = "cases", alpha = 6,color = "red",exclude = c("NY","NJ"))+
+  theme(legend.position = "right")+
+  labs(title = "COVID-19 Cases by State") + 
+  scale_fill_continuous(
+    low = "white", high = "black", name = "Confirmed COVID-19 Cases by State", label = scales::comma
+  )     
+
+```
+***
+---
+
+### Cumulative COVID-19  {data-commentary-width=300}
+
+```{r}
+p_2
+```
+
+*** 
+The graph to the left indicates the cumulative growth rate of cases across select states/countries. The states selected are those who have taken an active role in virus mitigation. 
+
+***
+### Distribution of COVID-19 cases in WV {data-commentary-width=400}
+
+```{r warning=FALSE}
+wv_map
+```
+
+*** 
+
+West Virginia cases are unique in the aspect that there are considerable number of counties that are not reporting any data. It shows that Martinsburg Metro area as well as Charleston and Morgantown metro areas have the largest concentrations of cases. This may be related to the population in those regions but it also the transient workforce population cannot be ruled out.
+
+*** 
+
+### Distribution of COVID-19 cases in PA {data-commentary-width=400}
+
+```{r warning=FALSE}
+pa_map
+```
+
+*** 
+The graphic to the left indicates the distribution of cases throughout Pennsylvania. One item to note is that due to the excessive number of cases in eastern part of the state, it reduces the impact of those in western Pennsylvania.
+
+*** 
+
+### Distribution of COVID-19 cases in USA {data-commentary-width=400}
+
+```{r warning=FALSE}
+full_us_map
+```
+
+*** 
+The graphic on the left indicates the distribution of confirmed cases of COVID-19 throughout the US on a state level. This map does intentionally drop New York and New Jersey due to their significant number of cases skewing the highlight of other locations. 
+
+***
+
+### Table of PA Cases {data-commentary-width=400}
+
+```{r warning=FALSE}
+knitr::kable(jh_pa[,c("Location","Last_Update","Confirmed", "Deaths", "Recovered")]) 
+```
+
+***
+Table of case count in Pennsylvania by county
+
+***
+
+***
+
+### Table of WV Cases {data-commentary-width=400}
+
+```{r warning=FALSE}
+knitr::kable(jh_wv[,c("Location","Last_Update","Confirmed", "Deaths", "Recovered")]) 
+```
+
+***
+Table of case count in West Virginia by county
