@@ -1,0 +1,31 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(rvest)
+world_cor <- read_html("https://www.worldometers.info/coronavirus/")
+cor_data_today <- world_cor %>% html_node("#main_table_countries_today")%>%
+  html_table() %>%
+  # removes commas in numbers
+  mutate_if(is.character, function(x) { gsub("[,:]", "", x) }) %>%
+  # turn everything but country column into a numeric
+  mutate_at(vars(-`Country,Other`), as.numeric)  
+cor_data_yesterday <- world_cor %>% html_node("#main_table_countries_yesterday")%>%
+  html_table() %>%
+  # removes commas in numbers
+  mutate_if(is.character, function(x) { gsub("[,:]", "", x) }) %>%
+  # turn everything but country column into a numeric
+  mutate_at(vars(-`Country,Other`), as.numeric)  
+```
+```{r}
+
+
+```
