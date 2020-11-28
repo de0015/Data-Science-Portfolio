@@ -1,0 +1,288 @@
+
+library(shiny)
+library(shinythemes)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(DT)
+library(RCurl)
+library(formattable)
+library(viridis)
+
+
+## If you post this to github... please remove line below
+
+
+
+yesterday <- format(Sys.Date()-1,"%m-%d-%Y.csv")
+
+date_eval<- format(Sys.Date()-1,"%Y-%m-%d") %>%
+    as.Date()
+
+percent_change<- format(Sys.Date()-2,"%m-%d-%Y.csv") 
+
+percent_change_date <- format(Sys.Date()-2,"%Y-%m-%d") %>%
+    as.Date()
+
+
+## John Hopkins State Data Below
+
+state_compare_url <- paste0("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/",percent_change) 
+
+state_recent_url <- paste0("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/",yesterday) 
+
+US_State_2_days <- getURL(state_compare_url)
+
+US_State_2_days <- read.csv(text = US_State_2_days)
+
+US_STATE_NEW <- getURL(state_recent_url)
+
+US_STATE_NEW <- read.csv(text = US_STATE_NEW)
+
+######
+
+
+data_url <- paste0("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/",yesterday) 
+
+percent_change_data <- paste0("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/",percent_change) 
+
+two_days_ago_date <- getURL(percent_change_data)
+
+compare_date_jh <- read.csv(text = two_days_ago_date)
+
+yesterday_jh <- getURL(data_url)
+
+yesterday_jh_data <- read.csv(text = yesterday_jh)
+
+table_date <- format(Sys.Date()-2,"%Y-%m-%d") %>%
+    as.Date()
+
+
+agg_compare <- aggregate(compare_date_jh$Confirmed, by=list(Category=compare_date_jh$Country_Region), FUN=sum) 
+agg_compare_death <- aggregate(compare_date_jh$Deaths, by=list(Category=compare_date_jh$Country_Region), FUN=sum) 
+agg_compare_recovery <- aggregate(compare_date_jh$Recovered, by=list(Category=compare_date_jh$Country_Region), FUN=sum) 
+
+agg_country <- aggregate(yesterday_jh_data$Confirmed, by=list(Category=yesterday_jh_data$Country_Region), FUN=sum) 
+
+agg_death <- aggregate(yesterday_jh_data$Deaths, by=list(Category=yesterday_jh_data$Country_Region), FUN=sum)
+
+names(agg_compare) <-c("Country","Confirmed Cases")
+names(agg_compare_death) <-c("Country","Deaths")
+names(agg_compare_recovery) <-c("Country","Recoveries")
+
+comparison_data <- merge(agg_compare,agg_compare_death, by = c("Country"))
+comparison_data <- merge(comparison_data, agg_compare_recovery, by = c("Country"))
+
+### The code below is for the merge of the final dataset
+
+agg_recovery <- aggregate(yesterday_jh_data$Recovered, by=list(Category=yesterday_jh_data$Country_Region), FUN=sum)
+names(agg_country) <-c("Country","Confirmed Cases")
+names(agg_death) <-c("Country","Deaths")
+names(agg_recovery) <-c("Country","Recoveries")
+total_country <- merge(agg_country,agg_death, by=c("Country"))
+
+total_country <- merge(total_country, agg_recovery, by=c("Country"))
+
+total_country$`Confirmed Cases` <- comma(total_country$`Confirmed Cases`, digits = 0)
+total_country$Deaths <- comma(total_country$Deaths, digits = 0)
+
+total_country$Recoveries <- comma(total_country$Recoveries, digits = 0)
+
+agg_state_confirmed_yesterday <- aggregate(compare_date_jh$Confirmed, by=list(Category=compare_date_jh$Province_State), FUN=sum)
+agg_state_deaths_yesterday <- aggregate(compare_date_jh$Deaths, by=list(Category=compare_date_jh$Province_State), FUN=sum)
+agg_state_recovery_yesterday <- aggregate(compare_date_jh$Recovered, by=list(Category=compare_date_jh$Province_State), FUN=sum)
+
+compare_data_state <- merge(agg_state_confirmed_yesterday,agg_state_deaths_yesterday, by = "Category")
+compare_data_state <- merge(compare_data_state, agg_state_recovery_yesterday, by= "Category")
+
+names(compare_data_state) <-c("State","Confirmed Cases","Deaths","Recoveries")
+
+agg_state_confirmed_today <- aggregate(yesterday_jh_data$Confirmed, by=list(Category=yesterday_jh_data$Province_State), FUN=sum)
+agg_state_deaths_today <- aggregate(yesterday_jh_data$Deaths, by=list(Category=yesterday_jh_data$Province_State), FUN=sum)
+agg_state_recovery_today <- aggregate(yesterday_jh_data$Recovered, by=list(Category=yesterday_jh_data$Province_State), FUN=sum)
+
+compare_data_state_today <- merge(agg_state_confirmed_today,agg_state_deaths_today, by = "Category")
+compare_data_state_today <- merge(compare_data_state_today, agg_state_recovery_today, by= "Category")
+
+names(compare_data_state_today) <-c("State","Confirmed Cases","Deaths","Recoveries")
+
+state_filter <- c("Vermont","New York","Pennsylvania","New Jersey","West Virginia","North Carolina","Texas","Puerto Rico","Texas","California","Illinois","District of Columbia", "Florida")
+
+choices <-c("Algeria",
+            "Australia",
+            "Austria",
+            "Bahrain",
+            "Belarus",
+            "Belgium",
+            "Bosnia and Herzegovina",
+            "Brazil",
+            "Bulgaria",
+            "Canada",
+            "China",
+            "Cote d'Ivoire",
+            "Croatia",
+            "Czechia",
+            "Denmark",
+            "Egypt",
+            "Estonia",
+            "Finland",
+            "France",
+            "Germany",
+            "Greece",
+            "Hungary",
+            "India",
+            "Iran",
+            "Iraq",
+            "Ireland",
+            "Italy",
+            "Japan",
+            "Jordan",
+            "Kazakhstan",
+            "Kenya",
+            "Kuwait",
+            "Latvia",
+            "Lebanon",
+            "Lithuania",
+            "Luxembourg",
+            "Malaysia",
+            "Mexico",
+            "Morocco",
+            "Netherlands",
+            "New Zealand",
+            "Norway",
+            "Oman",
+            "Peru",
+            "Philippines",
+            "Poland",
+            "Portugal",
+            "Qatar",
+            "Romania",
+            "Russia",
+            "Saudi Arabia",
+            "Serbia",
+            "Singapore",
+            "Slovakia",
+            "Slovenia",
+            "South Africa",
+            "Korea, South",
+            "Spain",
+            "Sweden",
+            "Switzerland",
+            "Taiwan*",
+            "Thailand",
+            "Turkey",
+            "Uganda",
+            "Ukraine",
+            "United Arab Emirates",
+            "United Kingdom",
+            "US",
+            "Zambia")
+
+### Use these below to calculate
+#df <- mydata[ -c(1,3:4) ]
+us_state_today <- US_STATE_NEW %>% filter(Province_State %in% state_filter)
+us_state_yesterday <- US_State_2_days%>% filter(Province_State %in% state_filter)
+
+us_state_calc <- merge(us_state_today,us_state_yesterday, by = "Province_State")
+
+us_state_calc$`Confirmed Case Increase` <-  us_state_calc$Confirmed.x - us_state_calc$Confirmed.y 
+us_state_calc$`Confirmed Death Increase` <- us_state_calc$Deaths.x - us_state_calc$Deaths.y 
+us_state_calc$`Confirmed Recovery Increase` <- us_state_calc$Recovered.x - us_state_calc$Recovered.y
+
+us_state_calc <- us_state_calc[ ,c(1,6,36,7,37,8,38)]
+
+names(us_state_calc) <-c("State","Confirmed Cases","Confirmed Cases Increase","Total Deaths","Daily Deaths Increase","Total Recoveries", "Daily Recoveries Increase")
+
+us_state_calc <- arrange(us_state_calc)
+
+
+total_country <- arrange(total_country,desc(total_country$Country))
+
+selected_states_current <- total_country %>% subset(Country %in% choices)
+
+
+selected_states_compare <- comparison_data %>% subset(Country %in% choices)
+
+names(selected_states_compare) <-c("Country","Confirmed Cases","Deaths","Recoveries")
+selected_states_compare$`Confirmed Cases` <- comma(selected_states_compare$`Confirmed Cases`, digits = 0)
+
+
+compar <- merge(selected_states_current,selected_states_compare, by = "Country") 
+
+compar$`Confirmed Case Increase` <-  (compar$`Confirmed Cases.x` - compar$`Confirmed Cases.y`) 
+compar$`Confirmed Death Increase` <- compar$Deaths.x - compar$Deaths.y 
+compar$`Confirmed Recovery Increase` <- compar$Recoveries.x - compar$Recoveries.y
+
+#df <- mydata[ -c(1,3:4) ]
+### Below sets the columns for the final table
+
+compar <- compar[,c(1,2,8,3,9,4,10)] 
+
+
+
+
+names(compar) <-c("Country","Confirmed Cases","Confirmed Cases Increase","Total Deaths","Daily Deaths Increase","Total Recoveries", "Daily Recoveries Increase")
+
+compar <- arrange(compar,desc(compar$`Confirmed Cases`))
+
+# Define UI for application that draws a histogram
+ui <- navbarPage(theme = shinytheme("flatly"),
+    fluidPage(
+    theme = shinytheme("cosmo"),
+  #  titlePanel(""),
+  #  sidebarLayout(
+      # sidebarPanel(
+           # checkboxGroupInput("dataset", "State",
+            #            choices = choices, selected = "North Carolina")
+        ),
+        mainPanel(
+          mainPanel(
+            tabsetPanel(
+              id = 'dataset',
+              tabPanel("Country", DT::dataTableOutput("table")),
+              tabPanel("State", DT::dataTableOutput("mytable2")),
+              tabPanel("", DT::dataTableOutput(""))
+            )
+          )
+        )
+)
+    server <- shinyServer(
+        
+        function(input,output){
+            
+        #    datasetInput <- reactive({
+         #       NY_times_state %>% filter(state == input$dataset)
+         #   })
+            
+            # plot time series
+           
+            output$table <- DT::renderDataTable({
+                compar %>%
+                    datatable(extensions = 'Buttons',
+                                           options = list(
+                                               pageLength = 100,
+                                               scrollX=TRUE,
+                                               width = '700px',
+                                               dom = 'T<"clear">lBfrtip'
+                                           )
+                ) %>%
+                    formatCurrency(2:4, currency = "", mark = ",") %>%
+                    formatRound(columns=c("Confirmed Cases","Confirmed Cases Increase","Total Deaths","Daily Deaths Increase","Total Recoveries", "Daily Recoveries Increase"), digits=0)
+           ## If the countries disappear, remove Country from the format round above... The damn thing tries to round a string...
+            })
+            output$mytable2 <- DT::renderDataTable({
+              us_state_calc %>%
+                datatable(extensions = 'Buttons',
+                          options = list(
+                            pageLength = 100,
+                            scrollX=TRUE,
+                            width = '700px',
+                            dom = 'T<"clear">lBfrtip')) %>%
+                formatCurrency(2:4, currency = "", mark = ",") %>%
+               formatRound(columns=c("Confirmed Cases","Confirmed Cases Increase","Total Deaths","Daily Deaths Increase","Total Recoveries", "Daily Recoveries Increase"), digits=0)
+            })
+        })
+    
+    shiny::shinyApp(ui = ui, server = server)
+    
