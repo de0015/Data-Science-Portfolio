@@ -19,7 +19,6 @@ library(RCurl)
 library(formattable)
 library(viridis)
 
-rsconnect::setAccountInfo(name='de0105', token='E2032AC41563C08133024C3C43AC1497', secret='zXkiD59GBSCEmUWUhgVBnZMYxbxDULiDAGCnyHia')
 
 PA_Data <- getURL("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
 
